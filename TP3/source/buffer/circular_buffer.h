@@ -15,7 +15,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#define BUFFER_SIZE 128  // 12 bytes buffer size JUST 11 bytes can be used for store data without deleting older bytes
+#define BUFFER_SIZE 120  // 12 bytes buffer size JUST 11 bytes can be used for store data without deleting older bytes
 
 /*******************************************************************************
  * ENUMERATIONS AND STRUCTURES AND TYPEDEFS
@@ -27,6 +27,7 @@ typedef struct{
 	//private
 	uint8_t head;
 	uint8_t tail;
+	uint8_t sizeInBytes;
 } circularBuffer;
 
 /*******************************************************************************
@@ -37,7 +38,7 @@ typedef struct{
  * @brief builder
  * @param circularBuffer type
  */
-void CBinit(circularBuffer * CB);
+void CBinit(circularBuffer * CB, uint8_t sizeInBytes);
 
 /**
  * @brief tells you whether there is new data
@@ -87,9 +88,3 @@ void CBreset(circularBuffer * CB);
  ******************************************************************************/
 
 #endif // _CIRCULAR_BUFFER_H_
-
-
-
-
-
-
