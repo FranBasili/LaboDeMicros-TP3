@@ -8,13 +8,14 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-static uint8_t getCircularPointer(uint8_t index){
-	return index % BUFFER_SIZE;
+static uint8_t getCircularPointer(uint8_t index, uint8_t sizeInBytes){
+	return index % sizeInBytes;
 }
 
-void CBinit(circularBuffer * CB){
+void CBinit(circularBuffer * CB, uint8_t sizeInBytes){
 	CB->head = 0;
 	CB->tail = 0;
+	CB->sizeInBytes = sizeInBytes;
 }
 
 bool CBisEmpty(circularBuffer * CB){
@@ -24,9 +25,9 @@ bool CBisEmpty(circularBuffer * CB){
 void CBputChain(circularBuffer * CB, const void * data, uint8_t bytesLen){
 	for (uint8_t i = 0; i < bytesLen; ++i) {
 		CB->buffer[CB->head] = ((uint8_t*)data)[i];
-		CB->head = getCircularPointer(++CB->head);
+		CB->head = getCircularPointer(++CB->head, CB->sizeInBytes);
 		if (CB->head == CB->tail) {
-			CB->tail = getCircularPointer(++CB->tail);;
+			CB->tail = getCircularPointer(++CB->tail, CB->sizeInBytes);;
 		}
 	}
 
@@ -34,16 +35,16 @@ void CBputChain(circularBuffer * CB, const void * data, uint8_t bytesLen){
 
 void CBputByte(circularBuffer * CB, uint8_t by){
 	CB->buffer[CB->head] = by;
-	CB->head = getCircularPointer(++CB->head);
+	CB->head = getCircularPointer(++CB->head, CB->sizeInBytes);
 	if (CB->head == CB->tail) {
-		CB->tail = getCircularPointer(++CB->tail);;
+		CB->tail = getCircularPointer(++CB->tail, CB->sizeInBytes);;
 	}
 }
 
 uint8_t CBgetByte(circularBuffer * CB){
 	if(CB->head != CB->tail){
 		uint8_t data = CB->buffer[CB->tail];
-		CB->tail = getCircularPointer(++CB->tail);
+		CB->tail = getCircularPointer(++CB->tail, CB->sizeInBytes);
 		return data;
 	}
 	return 0;
@@ -53,7 +54,7 @@ uint8_t CBgetBufferState(circularBuffer * CB){
 	if(CB->head >= CB->tail)
 		return CB->head - CB->tail;
 	else
-		return BUFFER_SIZE - CB->tail + CB->head;
+		return CB->sizeInBytes - CB->tail + CB->head;
 }
 /*
 const uint8_t * CBgetData(circularBuffer * CB, uint8_t bytesLen){
@@ -66,4 +67,3 @@ void CBreset(circularBuffer * CB){
 	CB->tail = 0;
 	CB->head = 0;
 }
-
