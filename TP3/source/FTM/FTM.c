@@ -105,31 +105,19 @@ void PWMInit(FTM_MODULE ftm, FTM_CHANNEL channel, uint32_t freq) {
 
 	FTM_Type* const pFTM = FTMPtrs[ftm];
 
-	// Disable write protection (if enabled)
-	if (pFTM->FMS & FTM_FMS_WPEN_MASK)	pFTM->MODE = FTM_MODE_WPDIS_MASK;
-
-	// Enable FTM
-	pFTM->MODE = FTM_MODE_FTMEN_MASK;
+	// Disblae FTM for PWM mode
+	pFTM->MODE &= ~FTM_MODE_FTMEN_MASK;		// FTMEN = 0
 
 	// Set PWM Mode to edge aligned with high-true polarity
-	pFTM->QDCTRL = 0x00;
-	pFTM->COMBINE = 0x00;		// TODO: Chequear canal
 	pFTM->CONTROLS[channel].CnSC = FTM_CnSC_MSB_MASK | FTM_CnSC_ELSB_MASK;		// MSB = ELSB = 1
-	pFTM->SYNC = FTM_SYNC_CNTMAX_MASK | FTM_SYNC_CNTMIN_MASK;
-//	pFTM->PWMLOAD |= FTM_PWMLOAD_LDOK_MASK;		// Enable update of write buffers on next OF
-//	pFTM->SYNCONF |= FTM_SYNCONF_SWSOC_MASK;
-	pFTM->SYNCONF |= FTM_SYNCONF_SWWRBUF_MASK;
-
-	// frequency configuration
-	pFTM->CNTIN = 0;	// Counter starts at 0
-	pFTM->MOD =	FTM_CLK/freq - 1;
-
 	// Start with duty = 0
 	pFTM->CONTROLS[channel].CnV = 0;
 
+	// frequency configuration
+	pFTM->MOD =	FTM_CLK/freq - 1;
+
 	// Pin configuration
 	portPtr[FTMPinPort[ftm][channel]]->PCR[FTMPinNum[ftm][channel]] = PORT_PCR_MUX(FTMPinMuxAlt[ftm][channel]);
-
 
 	// Set clok source and disable interrupts
 	// Obs: prescales set to 1
@@ -141,17 +129,13 @@ void PWMInit(FTM_MODULE ftm, FTM_CHANNEL channel, uint32_t freq) {
  * @brief Activa la salida PWM de un canal con el duty deseado
  * @param ftm: módulo FTM
  * @param channel: Canal del modulo FTM
- * @param duty: duty cycle del PWM (0 - MAX_DUTY)
+ * @param duty: duty cycle del PWM (0.0 - 1.0)
 */
 void PWMStart(FTM_MODULE ftm, FTM_CHANNEL channel, double duty) {
 	FTM_Type* const pFTM = FTMPtrs[ftm];
-
-//	FTMPtrs[ftm]->SC &= ~FTM_SC_CLKS_MASK;		// Stop clock
+	// Update channel value
 	pFTM->CONTROLS[channel].CnV = duty*(pFTM->MOD & FTM_MOD_MOD_MASK);
-//	FTMPtrs[ftm]->SC |= FTM_SC_CLKS(0x01);		// Start clock
-	pFTM->SYNC |= FTM_SYNC_SWSYNC_MASK;
 }
-
 
 
 /*******************************************************************************

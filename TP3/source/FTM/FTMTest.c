@@ -15,7 +15,7 @@
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
  ******************************************************************************/
 
-#define PWM_MOD	FTM_0
+#define PWM_MOD	FTM_0		// Pin PC 3
 #define PWM_CH	2
 
 #define PWM_FREQ	1000	// Hz
@@ -45,6 +45,8 @@
 
 uint8_t cont = 0;
 
+bool flag = true;
+
 /*******************************************************************************
  *******************************************************************************
                         GLOBAL FUNCTION DEFINITIONS
@@ -56,15 +58,19 @@ void App_Init (void)
 {
 	timerInit();
 	PWMInit(PWM_MOD, PWM_CH, PWM_FREQ);
-	PWMStart(PWM_MOD, PWM_CH, 0.5);
+//	PWMStart(PWM_MOD, PWM_CH, 0.5);
 }
 
 /* Función que se llama constantemente en un ciclo infinito */
 void App_Run (void)
 {
-//	timerDelay(TIMER_MS2TICKS(1000));
-//	PWMStart(PWM_MOD, PWM_CH, 0.01*cont++);
-//	if (cont > 100) cont = 0;
+	timerDelay(TIMER_MS2TICKS(500));
+	PWMStart(PWM_MOD, PWM_CH, 0.1*cont);
+
+	if (flag) cont++;
+	else cont--;
+
+	if (cont >= 10 || cont == 0) flag=!flag;
 }
 
 
