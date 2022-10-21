@@ -12,7 +12,7 @@
  * INCLUDE HEADER FILES
  ******************************************************************************/
 #include <stdint.h>
-
+#include <stdbool.h>
 /*******************************************************************************
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
  ******************************************************************************/
@@ -22,12 +22,6 @@
 /*******************************************************************************
  * ENUMERATIONS AND STRUCTURES AND TYPEDEFS
  ******************************************************************************/
-typedef enum
-{
-	ADCh0_t,
-	ADCh1_t,
-} ADCh_n;	//ADC_Type
-
 typedef enum
 {
 	DIVh_t1,    // Clock
@@ -54,9 +48,10 @@ typedef enum
  * @return Descripcion valor que devuelve
 */
 // +ej: char lcd_goto (int fil, int col);+
-void ADCh_Init (ADCh_n adc_n, ADChClkDiv_t divider);
-void ADCh_Start(ADCh_n adc_n);
-uint8_t get_ADCh(ADCh_n adc_n);
+void ADCh_Init ( ADChClkDiv_t divider);
+void ADCh_Start();
+uint8_t get_ADCh();
+bool ADCh_IsReady();
 
 
 /*******************************************************************************

@@ -70,7 +70,7 @@ ADCTaps_t   ADC_GetHardwareAverage (ADC_n adc_n);
 
 bool 		ADC_Calibrate 		   (ADC_n adc_n);
 
-void ADC_Start(ADC_n adc_n, ADCChannel_t channel, ADCMux_t mux, ADC_CB cb);
+void ADC_Start(ADC_n adc_n, ADCChannel_t channel, ADCMux_t mux);
 //bool 		ADC_IsReady 	       (ADC_n adc_n);
 
 ADCData_t 	ADC_getData 		   (ADC_n adc_n);

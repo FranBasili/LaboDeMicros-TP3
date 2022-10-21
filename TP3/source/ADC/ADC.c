@@ -23,7 +23,6 @@ typedef enum {PIN_DISABLE, ALTERNATIVE_1, ALTERNATIVE_2, ALTERNATIVE_3, ALTERNAT
 									ALTERNATIVE_5, ALTERNATIVE_6, ALTERNATIVE_7} mux_alt;
 typedef enum {OPEN_DRAIN, PUSH_PULL} pin_mode;
 
-static void PinConfig (uint8_t pin, uint8_t mux_alt, uint8_t interrupt_alt, uint8_t mode);
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -38,30 +37,27 @@ void ADC_Init (ADC_n adc_n, ADCClkDiv_t divider, ADCBits_t bits, ADCCycles_t cyc
 	NVIC_EnableIRQ(ADC1_IRQn);
 
 	adc->CFG1 = (adc->CFG1 & ~ADC_CFG1_ADICLK_MASK) | ADC_CFG1_ADICLK(BUS_CLK) ; //Use bus clock
-	adc->CFG1 = ADC_CFG1_ADIV(divider);		//Clock Divide Select
+	adc->CFG1 |= ADC_CFG1_ADIV(divider);		//Clock Divide Select
 
 	ADC_SetResolution(adc_n, bits);
 	ADC_SetCycles(adc_n, cycles);
 	ADC_Calibrate(adc_n);
 
-	//PinConfig (PORTNUM2PIN(), uint8_t mux_alt, uint8_t interrupt_alt, uint8_t mode);
-
-
+	adc->SC3 |= ADC_SC3_ADCO(true) & ADC_SC3_AVGE(false);  //Continous mode
 
 }
 
-void ADC_Start(ADC_n adc_n, ADCChannel_t channel, ADCMux_t mux, ADC_CB cb){
+void ADC_Start(ADC_n adc_n, ADCChannel_t channel, ADCMux_t mux){
 	ADC_t adc = ADCPorts[adc_n];
-	callback=cb;
-	adc->CFG2 = (adc->CFG2 & ~ADC_CFG2_MUXSEL_MASK) | ADC_CFG2_MUXSEL(mux);		// ADC Mux Select
-	adc->SC1[adc_n] = ADC_SC1_AIEN(ADC_interrupt[adc_n]) | ADC_SC1_ADCH(channel);	// Interrupt Enable, Input channel select
+	adc->CFG2 |= (adc->CFG2 & ~ADC_CFG2_MUXSEL_MASK) | ADC_CFG2_MUXSEL(mux);		// ADC Mux Select
+	adc->SC1[adc_n] = ADC_SC1_AIEN(ADC_interrupt[adc_n]) | ADC_SC1_ADCH(channel);	// Interrupt Disable, Input channel select
 
 }
 
 void ADC_SetResolution (ADC_n adc_n, ADCBits_t bits)
 {
 	ADC_t adc = (adc_n==ADC0_t) ? ADC0 : ADC1;
-	adc->CFG1 = (adc->CFG1 & ~ADC_CFG1_MODE_MASK) | ADC_CFG1_MODE(bits);
+	adc->CFG1 |= (adc->CFG1 & ~ADC_CFG1_MODE_MASK) | ADC_CFG1_MODE(bits);
 }
 
 void ADC_SetCycles (ADC_n adc_n, ADCCycles_t cycles)
@@ -124,7 +120,7 @@ void ADC_SetHardwareAverage (ADC_n adc_n, ADCTaps_t taps)
 	else
 	{
 		adc->SC3 |= ADC_SC3_AVGE_MASK;
-		adc->SC3 = (adc->SC3 & ~ADC_SC3_AVGS_MASK) | ADC_SC3_AVGS(taps);
+		adc->SC3 |= (adc->SC3 & ~ADC_SC3_AVGS_MASK) | ADC_SC3_AVGS(taps);
 	}
 }
 
@@ -147,7 +143,7 @@ bool ADC_Calibrate (ADC_n adc_n)
 	uint32_t scr3;
 
 	/// SETUP
-	adc->SC1[adc_n] = 0x1F;
+	adc->SC1[adc_n] |= 0x1F;
 	scr3 = adc->SC3;
 	adc->SC3 &= (ADC_SC3_AVGS(0x03) | ADC_SC3_AVGE_MASK);
 
@@ -160,8 +156,8 @@ bool ADC_Calibrate (ADC_n adc_n)
 		adc->SC3 |= ADC_SC3_CALF_MASK;
 		return false;
 	}
-	adc->PG  = (0x8000 | ((adc->CLP0+adc->CLP1+adc->CLP2+adc->CLP3+adc->CLP4+adc->CLPS) >> (1 + TWO_POW_NUM_OF_CAL)));
-	adc->MG  = (0x8000 | ((adc->CLM0+adc->CLM1+adc->CLM2+adc->CLM3+adc->CLM4+adc->CLMS) >> (1 + TWO_POW_NUM_OF_CAL)));
+	adc->PG  |= (0x8000 | ((adc->CLP0+adc->CLP1+adc->CLP2+adc->CLP3+adc->CLP4+adc->CLPS) >> (1 + TWO_POW_NUM_OF_CAL)));
+	adc->MG  |= (0x8000 | ((adc->CLM0+adc->CLM1+adc->CLM2+adc->CLM3+adc->CLM4+adc->CLMS) >> (1 + TWO_POW_NUM_OF_CAL)));
 
 	// FURTHER CALIBRATIONS
 	for (i = 0; i < TWO_POW_NUM_OF_CAL; i++)
@@ -190,23 +186,23 @@ bool ADC_Calibrate (ADC_n adc_n)
 		Minus[5] += (unsigned long)adc->CLMS;
 		Minus[6] += (unsigned long)adc->CLMD;
 	}
-	adc->OFS = (Offset >> TWO_POW_NUM_OF_CAL);
-	adc->PG  = (0x8000 | ((Plus[0] +Plus[1] +Plus[2] +Plus[3] +Plus[4] +Plus[5] ) >> (1 + TWO_POW_NUM_OF_CAL)));
-	adc->MG  = (0x8000 | ((Minus[0]+Minus[1]+Minus[2]+Minus[3]+Minus[4]+Minus[5]) >> (1 + TWO_POW_NUM_OF_CAL)));
-	adc->CLP0 = (Plus[0] >> TWO_POW_NUM_OF_CAL);
-	adc->CLP1 = (Plus[1] >> TWO_POW_NUM_OF_CAL);
-	adc->CLP2 = (Plus[2] >> TWO_POW_NUM_OF_CAL);
-	adc->CLP3 = (Plus[3] >> TWO_POW_NUM_OF_CAL);
-	adc->CLP4 = (Plus[4] >> TWO_POW_NUM_OF_CAL);
-	adc->CLPS = (Plus[5] >> TWO_POW_NUM_OF_CAL);
-	adc->CLPD = (Plus[6] >> TWO_POW_NUM_OF_CAL);
-	adc->CLM0 = (Minus[0] >> TWO_POW_NUM_OF_CAL);
-	adc->CLM1 = (Minus[1] >> TWO_POW_NUM_OF_CAL);
-	adc->CLM2 = (Minus[2] >> TWO_POW_NUM_OF_CAL);
-	adc->CLM3 = (Minus[3] >> TWO_POW_NUM_OF_CAL);
-	adc->CLM4 = (Minus[4] >> TWO_POW_NUM_OF_CAL);
-	adc->CLMS = (Minus[5] >> TWO_POW_NUM_OF_CAL);
-	adc->CLMD = (Minus[6] >> TWO_POW_NUM_OF_CAL);
+	adc->OFS |= (Offset >> TWO_POW_NUM_OF_CAL);
+	adc->PG  |= (0x8000 | ((Plus[0] +Plus[1] +Plus[2] +Plus[3] +Plus[4] +Plus[5] ) >> (1 + TWO_POW_NUM_OF_CAL)));
+	adc->MG  |= (0x8000 | ((Minus[0]+Minus[1]+Minus[2]+Minus[3]+Minus[4]+Minus[5]) >> (1 + TWO_POW_NUM_OF_CAL)));
+	adc->CLP0 |= (Plus[0] >> TWO_POW_NUM_OF_CAL);
+	adc->CLP1 |= (Plus[1] >> TWO_POW_NUM_OF_CAL);
+	adc->CLP2 |= (Plus[2] >> TWO_POW_NUM_OF_CAL);
+	adc->CLP3 |= (Plus[3] >> TWO_POW_NUM_OF_CAL);
+	adc->CLP4 |= (Plus[4] >> TWO_POW_NUM_OF_CAL);
+	adc->CLPS |= (Plus[5] >> TWO_POW_NUM_OF_CAL);
+	adc->CLPD |= (Plus[6] >> TWO_POW_NUM_OF_CAL);
+	adc->CLM0 |= (Minus[0] >> TWO_POW_NUM_OF_CAL);
+	adc->CLM1 |= (Minus[1] >> TWO_POW_NUM_OF_CAL);
+	adc->CLM2 |= (Minus[2] >> TWO_POW_NUM_OF_CAL);
+	adc->CLM3 |= (Minus[3] >> TWO_POW_NUM_OF_CAL);
+	adc->CLM4 |= (Minus[4] >> TWO_POW_NUM_OF_CAL);
+	adc->CLMS |= (Minus[5] >> TWO_POW_NUM_OF_CAL);
+	adc->CLMD |= (Minus[6] >> TWO_POW_NUM_OF_CAL);
 
 	/// UN-SETUP
 	adc->SC3 = scr3;
@@ -222,36 +218,15 @@ bool ADC_IsReady (ADC_n adc_n)
 	return adc->SC1[adc_n] & ADC_SC1_COCO_MASK;		// Conversion Complete Flag		//TODO: sacar esto, que devuelva un buffer con data
 }
 */
+
+
 ADCData_t ADC_getData (ADC_n adc_n)
 {
 	ADC_t adc = ADCPorts[adc_n];
 	return adc->R[adc_n];
 }
 
-void PinConfig (uint8_t pin, uint8_t mux_alt, uint8_t interrupt_alt, uint8_t mode){
-	uint32_t portn = PIN2PORT(pin); 				// Port number
-	uint32_t num = PIN2NUM(pin); 					// Pin number
-
-	PORT_Type *port = portPtrs[portn];
-
-	port->PCR[num]=0x00; 							//Clear pin
-
-	port->PCR[num] &= ~PORT_PCR_MUX_MASK;			//Clear
-	port->PCR[num] &= ~PORT_PCR_IRQC_MASK;
-
-	port->PCR[num] |= PORT_PCR_MUX(mux_alt); 
-	port->PCR[num] |= PORT_PCR_IRQC(interrupt_alt);
-
-	switch(mode){
-		case OPEN_DRAIN:
-			port->PCR[num] |= PORT_PCR_ODE(1);
-			break;
-		case PUSH_PULL:
-			port->PCR[num] &= ~PORT_PCR_ODE(1);
-			break;
-	}
-}
-
+/*
 __ISR__ ADC0_IRQHandler(void){
 	callback(ADC0_t, ADC_getData(ADC0_t));
 }
@@ -259,4 +234,4 @@ __ISR__ ADC0_IRQHandler(void){
 __ISR__ ADC1_IRQHandler(void){
 	callback(ADC1_t, ADC_getData(ADC1_t));
 }
-
+*/
