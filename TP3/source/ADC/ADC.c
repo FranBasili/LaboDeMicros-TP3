@@ -1,5 +1,7 @@
 
 #include "ADC.h"
+#include "hardware.h"
+#include "../MCAL/gpio.h"
 
 #define TWO_POW_NUM_OF_CAL (1 << 4)
 
@@ -10,12 +12,24 @@ bool ADC_interrupt[2] = {false, false};
 typedef ADC_Type *ADC_t;
 
 //static ADCData_t data[2] = {false, false};
+static ADC_Type* ADCPorts[] = ADC_BASE_PTRS;
+static PORT_Type* portPtrs[] = PORT_BASE_PTRS;
+
+
 
 ADC_CB callback;
 
+typedef enum {PIN_DISABLE, ALTERNATIVE_1, ALTERNATIVE_2, ALTERNATIVE_3, ALTERNATIVE_4, 
+									ALTERNATIVE_5, ALTERNATIVE_6, ALTERNATIVE_7} mux_alt;
+typedef enum {OPEN_DRAIN, PUSH_PULL} pin_mode;
+
+static void PinConfig (uint8_t pin, uint8_t mux_alt, uint8_t interrupt_alt, uint8_t mode);
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 void ADC_Init (ADC_n adc_n, ADCClkDiv_t divider, ADCBits_t bits, ADCCycles_t cycles)
 {
-	ADC_t adc = (adc_n==ADC0_t) ? ADC0 : ADC1;
+	ADC_t adc = ADCPorts[adc_n];
 
 	SIM->SCGC6 |= SIM_SCGC6_ADC0_MASK;
 	SIM->SCGC3 |= SIM_SCGC3_ADC1_MASK;
@@ -30,11 +44,14 @@ void ADC_Init (ADC_n adc_n, ADCClkDiv_t divider, ADCBits_t bits, ADCCycles_t cyc
 	ADC_SetCycles(adc_n, cycles);
 	ADC_Calibrate(adc_n);
 
+	//PinConfig (PORTNUM2PIN(), uint8_t mux_alt, uint8_t interrupt_alt, uint8_t mode);
+
+
 
 }
 
 void ADC_Start(ADC_n adc_n, ADCChannel_t channel, ADCMux_t mux, ADC_CB cb){
-	ADC_t adc = (adc_n==ADC0_t) ? ADC0 : ADC1;
+	ADC_t adc = ADCPorts[adc_n];
 	callback=cb;
 	adc->CFG2 = (adc->CFG2 & ~ADC_CFG2_MUXSEL_MASK) | ADC_CFG2_MUXSEL(mux);		// ADC Mux Select
 	adc->SC1[adc_n] = ADC_SC1_AIEN(ADC_interrupt[adc_n]) | ADC_SC1_ADCH(channel);	// Interrupt Enable, Input channel select
@@ -49,7 +66,7 @@ void ADC_SetResolution (ADC_n adc_n, ADCBits_t bits)
 
 void ADC_SetCycles (ADC_n adc_n, ADCCycles_t cycles)
 {
-	ADC_t adc = (adc_n==ADC0_t) ? ADC0 : ADC1;
+	ADC_t adc = ADCPorts[adc_n];
 
 	if (cycles & ~ADC_CFG2_ADLSTS_MASK)
 	{
@@ -73,7 +90,7 @@ void ADC_SetInterruptMode (ADC_n adc_n, bool mode)
 
 void ADC_ClearInterruptFlag (ADC_n adc_n)
 {
-	ADC_t adc = (adc_n==ADC0_t) ? ADC0 : ADC1;
+	ADC_t adc = ADCPorts[adc_n];
 	adc->SC1[adc_n] = 0x00;
 }
 
@@ -81,7 +98,7 @@ void ADC_ClearInterruptFlag (ADC_n adc_n)
 
 ADCBits_t ADC_GetResolution (ADC_n adc_n)
 {
-	ADC_t adc = (adc_n==ADC0_t) ? ADC0 : ADC1;
+	ADC_t adc = ADCPorts[adc_n];
 	return adc->CFG1 & ADC_CFG1_MODE_MASK;
 }
 
@@ -89,7 +106,7 @@ ADCBits_t ADC_GetResolution (ADC_n adc_n)
 
 ADCCycles_t ADC_GetSCycles (ADC_n adc_n)
 {
-	ADC_t adc = (adc_n==ADC0_t) ? ADC0 : ADC1;
+	ADC_t adc = ADCPorts[adc_n];
 	if (adc->CFG1 & ADC_CFG1_ADLSMP_MASK)
 		return ADC_c4;
 	else
@@ -99,7 +116,7 @@ ADCCycles_t ADC_GetSCycles (ADC_n adc_n)
 //Determines how many ADC conversions will be averaged to create the ADC average result
 void ADC_SetHardwareAverage (ADC_n adc_n, ADCTaps_t taps)
 {
-	ADC_t adc = (adc_n==ADC0_t) ? ADC0 : ADC1;
+	ADC_t adc = ADCPorts[adc_n];
 	if (taps & ~ADC_SC3_AVGS_MASK)
 	{
 		adc->SC3 &= ~ADC_SC3_AVGE_MASK;
@@ -113,7 +130,7 @@ void ADC_SetHardwareAverage (ADC_n adc_n, ADCTaps_t taps)
 
 ADCTaps_t ADC_GetHardwareAverage (ADC_n adc_n)
 {
-	ADC_t adc = (adc_n==ADC0_t) ? ADC0 : ADC1;
+	ADC_t adc = ADCPorts[adc_n];
 	if (adc->SC3 & ADC_SC3_AVGE_MASK)
 		return ADC_t1;
 	else
@@ -122,7 +139,7 @@ ADCTaps_t ADC_GetHardwareAverage (ADC_n adc_n)
 
 bool ADC_Calibrate (ADC_n adc_n)
 {
-	ADC_t adc = (adc_n==ADC0_t) ? ADC0 : ADC1;
+	ADC_t adc = ADCPorts[adc_n];
 	int32_t  Offset		= 0;
 	uint32_t Minus	[7] = {0,0,0,0,0,0,0};
 	uint32_t Plus	[7] = {0,0,0,0,0,0,0};
@@ -201,14 +218,38 @@ bool ADC_Calibrate (ADC_n adc_n)
 /*
 bool ADC_IsReady (ADC_n adc_n)
 {
-	ADC_t adc = (adc_n==ADC0_t) ? ADC0 : ADC1;
+	ADC_t adc = ADCPorts[adc_n];
 	return adc->SC1[adc_n] & ADC_SC1_COCO_MASK;		// Conversion Complete Flag		//TODO: sacar esto, que devuelva un buffer con data
 }
 */
 ADCData_t ADC_getData (ADC_n adc_n)
 {
-	ADC_t adc = (adc_n==ADC0_t) ? ADC0 : ADC1;
+	ADC_t adc = ADCPorts[adc_n];
 	return adc->R[adc_n];
+}
+
+void PinConfig (uint8_t pin, uint8_t mux_alt, uint8_t interrupt_alt, uint8_t mode){
+	uint32_t portn = PIN2PORT(pin); 				// Port number
+	uint32_t num = PIN2NUM(pin); 					// Pin number
+
+	PORT_Type *port = portPtrs[portn];
+
+	port->PCR[num]=0x00; 							//Clear pin
+
+	port->PCR[num] &= ~PORT_PCR_MUX_MASK;			//Clear
+	port->PCR[num] &= ~PORT_PCR_IRQC_MASK;
+
+	port->PCR[num] |= PORT_PCR_MUX(mux_alt); 
+	port->PCR[num] |= PORT_PCR_IRQC(interrupt_alt);
+
+	switch(mode){
+		case OPEN_DRAIN:
+			port->PCR[num] |= PORT_PCR_ODE(1);
+			break;
+		case PUSH_PULL:
+			port->PCR[num] &= ~PORT_PCR_ODE(1);
+			break;
+	}
 }
 
 __ISR__ ADC0_IRQHandler(void){

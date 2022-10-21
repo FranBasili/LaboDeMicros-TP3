@@ -2,7 +2,8 @@
 #ifndef SOURCES_TEMPLATE_ADC_H_
 #define SOURCES_TEMPLATE_ADC_H_
 
-#include "hardware.h"
+#include <stdint.h>
+#include <stdbool.h>
 
 typedef enum
 {
