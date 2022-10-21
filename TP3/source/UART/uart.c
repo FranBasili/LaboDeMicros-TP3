@@ -141,8 +141,8 @@ void uartInit (uint8_t id, uart_cfg_t config) {
 
 
 // Initialize Buffers
-	CBinit(TxBuffer+id);
-	CBinit(RxBuffer+id);
+	CBinit(TxBuffer+id, 1);
+	CBinit(RxBuffer+id, 1);
 
 #ifdef ENABLE_TP
 	gpioMode(TP_PIN, OUTPUT);
