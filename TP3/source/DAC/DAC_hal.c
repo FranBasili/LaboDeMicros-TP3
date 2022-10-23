@@ -67,7 +67,7 @@ void DACh_Init (uint16_t frec){		// in KHz
 	timerInit();
 	timer_id = timerGetId();
 
-	timerStart(timer_id, TIMER_MS2TICKS(1/frec), TIM_MODE_PERIODIC, write_data_cb); //TODO: arreglar tiempo
+	timerStart(timer_id, TIMER_MS2TICKS(1.0/frec), TIM_MODE_PERIODIC, write_data_cb); //TODO: arreglar tiempo
 
 }
 

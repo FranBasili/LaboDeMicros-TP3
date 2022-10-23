@@ -47,7 +47,7 @@ bool SysTick_Init (void (*funcallback)(void)) {
 
 	SysTick->VAL = 0;		// SysTick value reset
 
-	SysTick->LOAD = 50000 - 1;	// 500us @ 100MHz
+	SysTick->LOAD = 1000 - 1;	// 10us @ 100MHz
 
 	NVIC_EnableIRQ(SysTick_IRQn);
 

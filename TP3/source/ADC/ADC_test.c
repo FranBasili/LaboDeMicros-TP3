@@ -13,6 +13,7 @@
 #include "ADC_hal.h"
 #include "../UART/uart.h"
 #include <stdio.h>
+#include "../DAC/DAC_hal.h"
 /*******************************************************************************
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
  ******************************************************************************/
@@ -64,23 +65,32 @@ void App_Run (void)
 {
   ADCh_Init(DIVh_t8);
   ADCh_Start(); 
+  DACh_Init(10);
 
-  uint8_t arr[200];
-  uint8_t i;
-  for (i=0;i<200;i++){
-	  arr[i]=3;
-  }
-  i=0;
-  while (1){
+  // uint8_t arr[200];
+  // uint8_t i;
+  // for (i=0;i<200;i++){
+	//   arr[i]=3;
+  // }
+  // i=0;
+  // while (1){
+	//   if (!ADCh_IsReady()){
+	// 	  value = get_ADCh();
+	// 	  arr[i]=value;
+	// 	  i++;
+	//   }
+	//   if (i==200-1){
+	// 	  i=0;
+	//   }
+
+  // }
+  
+  while(1){
 	  if (!ADCh_IsReady()){
 		  value = get_ADCh();
-		  arr[i]=value;
-		  i++;
 	  }
-	  if (i==200-1){
-		  i=0;
-	  }
-
+	  uint16_t real_value=value*4095/255;
+	  DACh_SetData(real_value);
   }
 }
 
