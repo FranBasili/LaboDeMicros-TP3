@@ -12,7 +12,7 @@
 #include "DAC_hal.h"
 #include "DAC.h"
 #include "timer/timer.h"
-#include "../buffer/generic_circular_buffer.h"
+#include "../buffer/circular_buffer_16.h"
 
 /*******************************************************************************
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
@@ -51,7 +51,7 @@ static void write_data_cb ();
 
 static tim_id_t timer_id;
 
-static genericCircularBuffer buff;
+static circularBuffer16 buff;
 
 
 /*******************************************************************************
@@ -62,7 +62,7 @@ static genericCircularBuffer buff;
 void DACh_Init (uint16_t frec){		// in KHz
 	DAC_Init (DAC_0);
 
-	GCBinit(&buff,16);
+	CBinit16(&buff,200);
 
 	timerInit();
 	timer_id = timerGetId();
@@ -72,7 +72,7 @@ void DACh_Init (uint16_t frec){		// in KHz
 }
 
 void DACh_SetData(uint16_t data){
-	GCBputData(&buff, &data);
+	CBputByte16(&buff, data);
 }
 
 /*******************************************************************************
@@ -82,10 +82,8 @@ void DACh_SetData(uint16_t data){
  ******************************************************************************/
 
 void write_data_cb (){
-	if (!GCBisEmpty(&(buff))){
-		uint16_t data;
-		GCBgetData(&buff,&data);
-		DAC_SetData(DAC_0, data);
+	if (!CBisEmpty16(&buff)){
+		DAC_SetData(DAC_0, CBgetByte16(&buff));
 	}
 }
 

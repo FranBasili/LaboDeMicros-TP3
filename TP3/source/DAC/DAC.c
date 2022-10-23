@@ -86,7 +86,7 @@ void DAC_Init (DAC_n dac_n)
 		DACn=DAC1;
 	}
 
-	portPtr[PIN2PORT(PTB3)]->PCR[PIN2NUM(PTB3)]=PORT_PCR_MUX(0x00);
+	//portPtr[PIN2PORT(PTB3)]->PCR[PIN2NUM(PTB3)]=PORT_PCR_MUX(0x00);
 	
 	DACn->C0 = DAC_C0_DACEN_MASK | DAC_C0_DACRFS_MASK | DAC_C0_DACTRGSEL_MASK;	//DAC enable, DACREF_2 reference, software trigger	//TODO: por que DACREF_2?
 	DACn->C1 &= ~DAC_C1_DACBFEN_MASK;	//Buffer disabled
