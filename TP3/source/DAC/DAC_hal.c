@@ -1,30 +1,22 @@
 /***************************************************************************//**
-  @file		DAC.c
+  @file		DAC_hal.c
   @brief	+Descripcion del archivo+
   @author	KevinWahle
-  @date		15 oct. 2022
+  @date		22 oct. 2022
  ******************************************************************************/
 
 /*******************************************************************************
  * INCLUDE HEADER FILES
  ******************************************************************************/
 
-#include "../MCAL/gpio.h"
-#include "MK64F12.h"
-#include "hardware.h"
+#include "DAC_hal.h"
 #include "DAC.h"
-
-#include <stdint.h>
-#include <stdio.h>
-#include <string.h>
+#include "timer/timer.h"
+#include "../buffer/generic_circular_buffer.h"
 
 /*******************************************************************************
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
  ******************************************************************************/
-
-#define DAC_DATL_DATA0_WIDTH 8
-
-#define PTB3 PORTNUM2PIN(PB,3)
 
 
 /*******************************************************************************
@@ -43,7 +35,7 @@
  * FUNCTION PROTOTYPES FOR PRIVATE FUNCTIONS WITH FILE LEVEL SCOPE
  ******************************************************************************/
 
-// +ej: static void falta_envido (int);+
+static void write_data_cb ();
 
 
 /*******************************************************************************
@@ -57,8 +49,9 @@
  * STATIC VARIABLES AND CONST VARIABLES WITH FILE LEVEL SCOPE
  ******************************************************************************/
 
-// +ej: static int temperaturas_actuales[4];+
-static PORT_Type* const portPtr[] = PORT_BASE_PTRS;
+static tim_id_t timer_id;
+
+static genericCircularBuffer buff;
 
 
 /*******************************************************************************
@@ -66,56 +59,35 @@ static PORT_Type* const portPtr[] = PORT_BASE_PTRS;
                         GLOBAL FUNCTION DEFINITIONS
  *******************************************************************************
  ******************************************************************************/
+void DACh_Init (uint16_t frec){		// in KHz
+	DAC_Init (DAC_0);
 
+	GCBinit(&buff,16);
 
+	timerInit();
+	timer_id = timerGetId();
 
-static SIM_Type* sim_ptr = SIM;				// For clock enable
-
-
-
-
-void DAC_Init (DAC_n dac_n)
-{
-	DAC_Type * DACn;
-	if (dac_n==DAC_0){
-		sim_ptr->SCGC2 |= SIM_SCGC2_DAC0_MASK;	// Clock Gating
-		DACn=DAC0;
-	}
-	else{
-		sim_ptr->SCGC2 |= SIM_SCGC2_DAC1_MASK;	// Clock Gating
-		DACn=DAC1;
-	}
-
-	portPtr[PIN2PORT(PTB3)]->PCR[PIN2NUM(PTB3)]=PORT_PCR_MUX(0x00);
-	
-	DACn->C0 = DAC_C0_DACEN_MASK | DAC_C0_DACRFS_MASK | DAC_C0_DACTRGSEL_MASK;	//DAC enable, DACREF_2 reference, software trigger	//TODO: por que DACREF_2?
-	DACn->C1 &= ~DAC_C1_DACBFEN_MASK;	//Buffer disabled
-
+	timerStart(timer_id, TIMER_MS2TICKS(1/frec), TIM_MODE_PERIODIC, write_data_cb); //TODO: arreglar tiempo
 
 }
 
-
-
-void DAC_SetData (DAC_n dac_n, DACData_t data)		// 12bit length
-{
-	DAC_Type * DACn;
-	if (dac_n==DAC_0){
-		DACn=DAC0;
-	}
-	else{
-		DACn=DAC1;
-	}
-
-	DACn->DAT[0].DATL = DAC_DATL_DATA0(data);
-	DACn->DAT[0].DATH = DAC_DATH_DATA1(data >> DAC_DATL_DATA0_WIDTH);
+void DACh_SetData(uint16_t data){
+	GCBputData(&buff, &data);
 }
-
 
 /*******************************************************************************
  *******************************************************************************
                         LOCAL FUNCTION DEFINITIONS
  *******************************************************************************
  ******************************************************************************/
+
+void write_data_cb (){
+	if (!GCBisEmpty(&(buff))){
+		uint16_t data;
+		GCBgetData(&buff,&data);
+		DAC_SetData(DAC_0, data);
+	}
+}
 
 
 

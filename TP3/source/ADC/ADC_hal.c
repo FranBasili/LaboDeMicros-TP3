@@ -23,7 +23,7 @@
  ******************************************************************************/
 
 #define NBITS 8 //8 bits implementation
-#define PTB12 PORTNUM2PIN(PB,2)
+#define PTB2 PORTNUM2PIN(PB,2)
 
 /*******************************************************************************
  * ENUMERATIONS AND STRUCTURES AND TYPEDEFS
@@ -66,6 +66,7 @@ static circularBuffer buff;
 
 void ADCh_Init (ADChClkDiv_t divider){
 	ADC_Init(ADC0_t, divider, NBITS , ADC_c24);
+
 	CBinit(&buff,200);
 	
 	timerInit();
@@ -76,7 +77,7 @@ void ADCh_Init (ADChClkDiv_t divider){
 void ADCh_Start(){
 	ADC_Start(ADC0_t, 0x0C, ADC_mA); //Channel 12
 									 //mux A selected
-	portPtr[PIN2PORT(PTB12)]->PCR[PIN2NUM(PTB12)]=PORT_PCR_MUX(0x00); //PTB2
+	portPtr[PIN2PORT(PTB2)]->PCR[PIN2NUM(PTB2)]=PORT_PCR_MUX(0x00); //PTB2
 
 	timerStart(timer_id, TIMER_MS2TICKS(1), TIM_MODE_PERIODIC, add_buff_cb); //TODO: arreglar tiempo
 	

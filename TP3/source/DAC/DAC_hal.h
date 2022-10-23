@@ -1,16 +1,17 @@
 /***************************************************************************//**
-  @file     DAC.h
+  @file     DAC_hal.h
   @brief    +Descripcion del archivo+
   @author   KevinWahle
-  @date		15 oct. 2022
+  @date		22 oct. 2022
  ******************************************************************************/
 
-#ifndef DAC_DAC_H_
-#define DAC_DAC_H_
+#ifndef DAC_DAC_HAL_H_
+#define DAC_DAC_HAL_H_
 
 /*******************************************************************************
  * INCLUDE HEADER FILES
  ******************************************************************************/
+#include <stdint.h>
 
 
 /*******************************************************************************
@@ -22,14 +23,13 @@
 /*******************************************************************************
  * ENUMERATIONS AND STRUCTURES AND TYPEDEFS
  ******************************************************************************/
-typedef enum {DAC_0, DAC_1} DAC_n;
+
 
 /*******************************************************************************
  * VARIABLE PROTOTYPES WITH GLOBAL SCOPE
  ******************************************************************************/
 
 // +ej: extern unsigned int anio_actual;+
-typedef uint16_t DACData_t;
 
 
 /*******************************************************************************
@@ -43,11 +43,10 @@ typedef uint16_t DACData_t;
  * @return Descripcion valor que devuelve
 */
 // +ej: char lcd_goto (int fil, int col);+
-void DAC_Init (DAC_n dac_n);
-void DAC_SetData (DAC_n dac_n, DACData_t data);		// 12bit length
-
+void DACh_Init (uint16_t frec);		// in KHz
+void DACh_SetData(uint16_t data);
 
 /*******************************************************************************
  ******************************************************************************/
 
-#endif // _DAC_DAC_H_
+#endif // _DAC_DAC_HAL_H_

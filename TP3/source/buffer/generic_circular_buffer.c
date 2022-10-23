@@ -24,7 +24,7 @@ bool GCBisEmpty(genericCircularBuffer * CB){
 
 void GCBputDataChain(genericCircularBuffer * CB, const void * dataChain, uint8_t AmountOfData){
 	for (uint8_t i = 0; i < AmountOfData; ++i) {
-		GCBputByte(CB, &(((uint8_t*)dataChain)[i*CB->sizeDataType]));
+		GCBputData(CB, &(((uint8_t*)dataChain)[i*CB->sizeDataType]));
 	}
 
 }
