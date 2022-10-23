@@ -11,30 +11,36 @@ bool ADC_interrupt[2] = {false, false};
 
 typedef ADC_Type *ADC_t;
 
-//static ADCData_t data[2] = {false, false};
 static ADC_Type* ADCPorts[] = ADC_BASE_PTRS;
 static PORT_Type* portPtrs[] = PORT_BASE_PTRS;
 
 
 
-ADC_CB callback;
+//ADC_CB callback;
 
 typedef enum {PIN_DISABLE, ALTERNATIVE_1, ALTERNATIVE_2, ALTERNATIVE_3, ALTERNATIVE_4, 
 									ALTERNATIVE_5, ALTERNATIVE_6, ALTERNATIVE_7} mux_alt;
 typedef enum {OPEN_DRAIN, PUSH_PULL} pin_mode;
 
 
-/////////////////////////////////////////////////////////////////////////////////////////////////////////
+/*******************************************************************************
+ *******************************************************************************
+                        GLOBAL FUNCTION DEFINITIONS
+ *******************************************************************************
+ ******************************************************************************/
 
 void ADC_Init (ADC_n adc_n, ADCClkDiv_t divider, ADCBits_t bits, ADCCycles_t cycles)
 {
 	ADC_t adc = ADCPorts[adc_n];
 
-	SIM->SCGC6 |= SIM_SCGC6_ADC0_MASK;
-	SIM->SCGC3 |= SIM_SCGC3_ADC1_MASK;
-
-	NVIC_EnableIRQ(ADC0_IRQn);
-	NVIC_EnableIRQ(ADC1_IRQn);
+	if (!adc_n){
+		SIM->SCGC6 |= SIM_SCGC6_ADC0_MASK;
+		NVIC_EnableIRQ(ADC0_IRQn);
+	}
+	else{
+		SIM->SCGC3 |= SIM_SCGC3_ADC1_MASK;
+		NVIC_EnableIRQ(ADC1_IRQn);
+	}
 
 	adc->CFG1 = (adc->CFG1 & ~ADC_CFG1_ADICLK_MASK) | ADC_CFG1_ADICLK(BUS_CLK) ; //Use bus clock
 	adc->CFG1 |= ADC_CFG1_ADIV(divider);		//Clock Divide Select
@@ -43,7 +49,7 @@ void ADC_Init (ADC_n adc_n, ADCClkDiv_t divider, ADCBits_t bits, ADCCycles_t cyc
 	ADC_SetCycles(adc_n, cycles);
 	ADC_Calibrate(adc_n);
 
-	adc->SC3 |= ADC_SC3_ADCO(true) & ADC_SC3_AVGE(false);  //Continous mode
+	adc->SC3 |= ADC_SC3_ADCO(true) ;  //Continous mode & ADC_SC3_AVGE(false)
 
 }
 
@@ -211,19 +217,22 @@ bool ADC_Calibrate (ADC_n adc_n)
 }
 
 
-/*
+
 bool ADC_IsReady (ADC_n adc_n)
 {
 	ADC_t adc = ADCPorts[adc_n];
-	return adc->SC1[adc_n] & ADC_SC1_COCO_MASK;		// Conversion Complete Flag		//TODO: sacar esto, que devuelva un buffer con data
+	bool is_ready = adc->SC1[adc_n] & ADC_SC1_COCO_MASK;		// Conversion Complete Flag
+	return is_ready;
 }
-*/
+
 
 
 ADCData_t ADC_getData (ADC_n adc_n)
 {
 	ADC_t adc = ADCPorts[adc_n];
-	return adc->R[adc_n];
+	ADCData_t data= adc->R[adc_n];
+	return data;
+
 }
 
 /*

@@ -34,23 +34,33 @@ typedef enum
  * VARIABLE PROTOTYPES WITH GLOBAL SCOPE
  ******************************************************************************/
 
-// +ej: extern unsigned int anio_actual;+
-
 
 /*******************************************************************************
  * FUNCTION PROTOTYPES WITH GLOBAL SCOPE
  ******************************************************************************/
 
+
 /**
- * @brief TODO: completar descripcion
- * @param param1 Descripcion parametro 1
- * @param param2 Descripcion parametro 2
- * @return Descripcion valor que devuelve
+ * @brief initialize ADC_0 module
+ * @param divider sample time divider to bus clock
 */
-// +ej: char lcd_goto (int fil, int col);+
 void ADCh_Init ( ADChClkDiv_t divider);
+
+/**
+ * @brief starts sampling
+*/
 void ADCh_Start();
+
+/**
+ * @brief get sampled data
+ * @return sampled data
+*/
 uint8_t get_ADCh();
+
+/**
+ * @brief check if there is sampled data
+ * @return true if there is data available
+*/
 bool ADCh_IsReady();
 
 

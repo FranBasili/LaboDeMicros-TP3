@@ -1,9 +1,23 @@
+/***************************************************************************//**
+  @file     ADC.h
+  @brief    +Descripcion del archivo+
+  @author   KevinWahle
+  @date		16 oct. 2022
+ ******************************************************************************/
 
 #ifndef SOURCES_TEMPLATE_ADC_H_
 #define SOURCES_TEMPLATE_ADC_H_
 
+/*******************************************************************************
+ * INCLUDE HEADER FILES
+ ******************************************************************************/
+
 #include <stdint.h>
 #include <stdbool.h>
+
+/*******************************************************************************
+ * ENUMERATIONS AND STRUCTURES AND TYPEDEFS
+ ******************************************************************************/
 
 typedef enum
 {
@@ -56,23 +70,41 @@ typedef uint8_t ADCChannel_t; /* Channel 0-23 */
 typedef uint16_t ADCData_t;
 typedef void (*ADC_CB)(ADC_n adc_n, ADCData_t data);
 
+/*******************************************************************************
+ * FUNCTION PROTOTYPES WITH GLOBAL SCOPE
+ ******************************************************************************/
+
+/**
+ * @brief initalize ADC module
+ * @param adc_n number of adc
+ * @param divider sample time divider to bus clock
+ * @param bits number of bits per sample
+ * @cycles number of cycles to complete a conversion
+ */
 void ADC_Init (ADC_n adc_n, ADCClkDiv_t divider, ADCBits_t bits, ADCCycles_t cycles);
 
-void 		ADC_SetInterruptMode   (ADC_n adc_n, bool);
-void 		ADC_ClearInterruptFlag (ADC_n adc_n);
-
-void 		ADC_SetResolution 	   (ADC_n adc_n, ADCBits_t);
-ADCBits_t 	ADC_GetResolution 	   (ADC_n adc_n);
-void 		ADC_SetCycles	 	   (ADC_n adc_n, ADCCycles_t);
-ADCCycles_t ADC_GetCycles	 	   (ADC_n adc_n);
-void 		ADC_SetHardwareAverage (ADC_n adc_n, ADCTaps_t);
-ADCTaps_t   ADC_GetHardwareAverage (ADC_n adc_n);
-
-bool 		ADC_Calibrate 		   (ADC_n adc_n);
-
+/**
+ * @brief starts sampling
+ * @param adc_n number of adc
+ * @param channel channel to sample from
+ * @param mux mux to sample from
+ */
 void ADC_Start(ADC_n adc_n, ADCChannel_t channel, ADCMux_t mux);
-//bool 		ADC_IsReady 	       (ADC_n adc_n);
 
-ADCData_t 	ADC_getData 		   (ADC_n adc_n);
+
+void ADC_SetInterruptMode (ADC_n adc_n, bool);
+void ADC_ClearInterruptFlag (ADC_n adc_n);
+
+void ADC_SetResolution (ADC_n adc_n, ADCBits_t);
+ADCBits_t ADC_GetResolution (ADC_n adc_n);
+void ADC_SetCycles (ADC_n adc_n, ADCCycles_t);
+ADCCycles_t ADC_GetCycles (ADC_n adc_n);
+void ADC_SetHardwareAverage (ADC_n adc_n, ADCTaps_t);
+ADCTaps_t ADC_GetHardwareAverage (ADC_n adc_n);
+
+bool ADC_Calibrate (ADC_n adc_n);
+
+bool ADC_IsReady (ADC_n adc_n);
+ADCData_t ADC_getData (ADC_n adc_n);
 
 #endif /* SOURCES_TEMPLATE_ADC_H_ */

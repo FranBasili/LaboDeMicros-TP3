@@ -23,7 +23,8 @@
  ******************************************************************************/
 
 #define NBITS 8 //8 bits implementation
-#define PTB12 PORTNUM2PIN(PB,12)
+#define PTB12 PORTNUM2PIN(PB,2)
+
 /*******************************************************************************
  * ENUMERATIONS AND STRUCTURES AND TYPEDEFS
  ******************************************************************************/
@@ -40,24 +41,20 @@
  ******************************************************************************/
 
 static void add_buff_cb ();
-static PORT_Type* const portPtr[] = PORT_BASE_PTRS;
-
-
-static tim_id_t timer_id;
 
 
 /*******************************************************************************
  * ROM CONST VARIABLES WITH FILE LEVEL SCOPE
  ******************************************************************************/
 
-// +ej: static const int temperaturas_medias[4] = {23, 26, 24, 29};+
 
 
 /*******************************************************************************
  * STATIC VARIABLES AND CONST VARIABLES WITH FILE LEVEL SCOPE
  ******************************************************************************/
+static PORT_Type* const portPtr[] = PORT_BASE_PTRS;
 
-
+static tim_id_t timer_id;
 
 static circularBuffer buff;
 
@@ -78,10 +75,10 @@ void ADCh_Init (ADChClkDiv_t divider){
 }
 void ADCh_Start(){
 	ADC_Start(ADC0_t, 0x0C, ADC_mA); //Channel 12
-												 //mux A selected
-	portPtr[PIN2PORT(PTB12)]->PCR[PIN2NUM(PTB12)]=PORT_PCR_MUX(0x00); //PTB12
+									 //mux A selected
+	portPtr[PIN2PORT(PTB12)]->PCR[PIN2NUM(PTB12)]=PORT_PCR_MUX(0x00); //PTB2
 
-	timerStart(timer_id, TIMER_MS2TICKS(0.11), TIM_MODE_PERIODIC, add_buff_cb); //9kHz
+	timerStart(timer_id, TIMER_MS2TICKS(1), TIM_MODE_PERIODIC, add_buff_cb); //TODO: arreglar tiempo
 	
 }
 
@@ -103,9 +100,10 @@ uint8_t get_ADCh(){
  ******************************************************************************/
 void add_buff_cb (){
 	
-	ADCData_t data =ADC_getData(ADC0_t);
-
-	CBputByte(&buff, (uint8_t)data);	//Todo: data se castea solo?
+	if (ADC_IsReady(ADC0_t)){
+		ADCData_t data =ADC_getData(ADC0_t);
+		CBputByte(&buff, (uint8_t)data);	//Todo: data se castea solo?
+	}
 }
 
 
