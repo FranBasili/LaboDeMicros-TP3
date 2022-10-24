@@ -1,6 +1,6 @@
 
 #include "ADC.h"
-#include "hardware.h"
+#include "MK64F12.h"
 #include "../MCAL/gpio.h"
 
 #define TWO_POW_NUM_OF_CAL (1 << 4)
