@@ -11,7 +11,9 @@
 
 #include "FTM.h"
 #include "MK64F12.h"
+#include "hardware.h"
 #include "MCAL/gpio.h"
+#include <stdlib.h>
 
 /*******************************************************************************
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
@@ -19,9 +21,12 @@
 
 #define FTM_CLK	50000000UL	// 50MHz Bus Clock
 
+#define FTM_MAX_VAL	0xFFFFUL
+
 #define FTM_CLK_PTRS {&(SIM->SCGC6), &(SIM->SCGC6), &(SIM->SCGC6), &(SIM->SCGC3)}
 #define FTM_CLK_MASKS {SIM_SCGC6_FTM0_MASK, SIM_SCGC6_FTM1_MASK, SIM_SCGC6_FTM2_MASK, SIM_SCGC3_FTM3_MASK}
 
+#define FTM_CnSC_EDGE(x)	(((uint32_t)(((uint32_t)(x)) << FTM_CnSC_ELSA_SHIFT)) & (FTM_CnSC_ELSB_MASK | FTM_CnSC_ELSA_MASK))
 
 /*******************************************************************************
  * ENUMERATIONS AND STRUCTURES AND TYPEDEFS
@@ -39,14 +44,14 @@
  * FUNCTION PROTOTYPES FOR PRIVATE FUNCTIONS WITH FILE LEVEL SCOPE
  ******************************************************************************/
 
-
+void FTM_IRQHandler(FTM_MODULE ftm);
 
 /*******************************************************************************
  * ROM CONST VARIABLES WITH FILE LEVEL SCOPE
  ******************************************************************************/
 
 static FTM_Type* const FTMPtrs[] = FTM_BASE_PTRS;
-//static const IRQn_Type FTMIRQs[] = FTM_IRQS;
+static const IRQn_Type FTMIRQs[] = FTM_IRQS;
 
 
 
@@ -81,14 +86,25 @@ static const uint8_t FTMPinMuxAlt[][FTM_CH_COUNT] =	{	{	4,	4,	4,	4,	4,	4,	4,	4,	
  * STATIC VARIABLES AND CONST VARIABLES WITH FILE LEVEL SCOPE
  ******************************************************************************/
 
-// +ej: static int temperaturas_actuales[4];+
+static callbackICEdge* ICCbPtrs[FTM_COUNT][FTM_CH_COUNT];
+static uint32_t ICTOFCont[FTM_COUNT][FTM_CH_COUNT];
 
+static uint16_t ICChannelValue[FTM_COUNT][FTM_CH_COUNT];
+static FTM_tick_t ICLastTicks[FTM_COUNT][FTM_CH_COUNT];
 
 /*******************************************************************************
  *******************************************************************************
                         GLOBAL FUNCTION DEFINITIONS
  *******************************************************************************
  ******************************************************************************/
+
+/**
+ * @brief Reinicia el contador
+ * @param ftm: módulo FTM
+*/
+void FTMReset(FTM_MODULE ftm) {
+	FTMPtrs[ftm]->CNT = 0x00;	// Reset counter to CNTIN
+}
 
 ////// PWM //////
 
@@ -105,6 +121,9 @@ void PWMInit(FTM_MODULE ftm, FTM_CHANNEL channel, uint32_t freq) {
 
 	FTM_Type* const pFTM = FTMPtrs[ftm];
 
+	// Disable write protection (if enabled)
+	if (pFTM->FMS & FTM_FMS_WPEN_MASK)	pFTM->MODE = FTM_MODE_WPDIS_MASK;
+
 	// Disblae FTM for PWM mode
 	pFTM->MODE &= ~FTM_MODE_FTMEN_MASK;		// FTMEN = 0
 
@@ -119,7 +138,7 @@ void PWMInit(FTM_MODULE ftm, FTM_CHANNEL channel, uint32_t freq) {
 	// Pin configuration
 	portPtr[FTMPinPort[ftm][channel]]->PCR[FTMPinNum[ftm][channel]] = PORT_PCR_MUX(FTMPinMuxAlt[ftm][channel]);
 
-	// Set clok source and disable interrupts
+	// Set clock source and disable interrupts
 	// Obs: prescales set to 1
 	FTMPtrs[ftm]->SC = FTM_SC_CLKS(0x01) | FTM_SC_PS(0x00);		// Start clock
 
@@ -138,10 +157,136 @@ void PWMStart(FTM_MODULE ftm, FTM_CHANNEL channel, double duty) {
 }
 
 
+////// Input Capture //////
+
+/**
+ * @brief Inicializa un canal FTM en Input Capture
+ * @param ftm: módulo FTM
+ * @param channel: Canal del modulo FTM
+ * @param edge: capture edge
+ * @param edgeCb: callback que se llama en cada flanco activo con la cantidad de ticks desde el ultimo.
+*/
+void ICInit(FTM_MODULE ftm, FTM_CHANNEL channel, IC_CAPTURE_EDGE edge, callbackICEdge edgeCb) {
+
+	// Enable FTMx clock
+		*(FTMClkSimPtr[ftm]) |= FTMClkSimMask[ftm];
+
+		FTM_Type* const pFTM = FTMPtrs[ftm];
+
+		// Disable write protection (if enabled)
+		if (pFTM->FMS & FTM_FMS_WPEN_MASK)	pFTM->MODE = FTM_MODE_WPDIS_MASK;
+
+		// Enable FTM
+		pFTM->MODE = FTM_MODE_FTMEN_MASK;
+
+		pFTM->CNTIN = 0x00;
+		pFTM->MOD = FTM_MOD_MOD_MASK;	// Free running clock
+		pFTM->CONF = 0x00;
+
+		// Set channel to input capture and enable channel interrupts
+		pFTM->QDCTRL = 0x00;
+		pFTM->COMBINE = 0x00;		// TODO: Chequear canal
+		pFTM->CONTROLS[channel].CnSC = FTM_CnSC_EDGE(edge) | FTM_CnSC_CHIE_MASK;
+
+		// Pin configuration
+		portPtr[FTMPinPort[ftm][channel]]->PCR[FTMPinNum[ftm][channel]] = PORT_PCR_MUX(FTMPinMuxAlt[ftm][channel]);
+
+		// Filter enable
+		//TODO
+
+		// Set callback
+		ICCbPtrs[ftm][channel] = edgeCb;
+
+		// Reset counters
+		ICTOFCont[ftm][channel] = 0;
+		ICChannelValue[ftm][channel] = 0;
+		ICLastTicks[ftm][channel] = 0;
+
+		// Set clock source and enable TOF interrupt
+		FTMPtrs[ftm]->SC = FTM_SC_CLKS(0x01) | FTM_SC_PS(0x00) | FTM_SC_TOIE_MASK;		// Start clock
+
+		NVIC_EnableIRQ(FTMIRQs[ftm]);
+
+}
+
+
+/**
+ * @brief Devuelve el valor del contador en el ultimo evento
+ * @param ftm: módulo FTM
+ * @param channel: Canal del modulo FTM
+ * @return valore del contador del canal
+*/
+FTM_tick_t ICGetCont(FTM_MODULE ftm, FTM_CHANNEL channel) {
+
+	return 0;
+}
+
+/**
+ * @brief Reinicia el contador y el valor del canal
+ * @param ftm: módulo FTM
+ * @param channel: Canal del modulo FTM
+*/
+void ICReset(FTM_MODULE ftm, FTM_CHANNEL channel) {
+
+	// TODO: Disable interrupts while modifying values
+	FTMReset(ftm);
+	ICLastTicks[ftm][channel] = 0;
+	ICTOFCont[ftm][channel] = 0;
+	ICChannelValue[ftm][channel] = 0;
+
+}
+
 /*******************************************************************************
  *******************************************************************************
                         LOCAL FUNCTION DEFINITIONS
  *******************************************************************************
  ******************************************************************************/
 
+void FTM_IRQHandler(FTM_MODULE ftm) {
+	FTM_Type* const pFTM = FTMPtrs[ftm];
+	uint8_t status = pFTM->STATUS;
 
+	if (pFTM->SC & FTM_SC_TOF_MASK) {	// Overflow
+		pFTM->SC &= ~FTM_SC_TOF_MASK;
+		uint32_t* pTOF = ICTOFCont[ftm];
+		for (uint8_t i = 0; i < FTM_CH_COUNT; i++) {
+			(*pTOF++)++;	// Increment all channel counters
+		}
+	}
+
+	if (status) {		// Channel Event
+		for (uint8_t i = 0; i < FTM_CH_COUNT; i++) {
+			if (status & (1UL << i)) {
+//				pFTM->STATUS &= ~(1UL << i);	// Write 0 to clear flag
+				// Calculate ticks diff
+				ICLastTicks[ftm][i] = pFTM->CONTROLS[i].CnV - ICChannelValue[ftm][i] + ICTOFCont[ftm][i]*(FTM_MAX_VAL+1);
+				// Save new value
+				ICChannelValue[ftm][i] = pFTM->CONTROLS[i].CnV;
+
+				ICTOFCont[ftm][i] = 0;	// Reset TOF counter
+
+				// Exec callback
+				if (ICCbPtrs[ftm][i] != NULL) ICCbPtrs[ftm][i](ICLastTicks[ftm][i]);
+			}
+		}
+		pFTM->STATUS = 0x00;	// Clear all flags
+	}
+
+}
+
+
+__ISR__ FTM0_IRQHandler () {
+	FTM_IRQHandler(FTM_0);
+}
+
+__ISR__ FTM1_IRQHandler () {
+	FTM_IRQHandler(FTM_1);
+}
+
+__ISR__ FTM2_IRQHandler () {
+	FTM_IRQHandler(FTM_2);
+}
+
+__ISR__ FTM3_IRQHandler () {
+	FTM_IRQHandler(FTM_3);
+}

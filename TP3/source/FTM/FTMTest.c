@@ -10,32 +10,23 @@
 
 #include "FTM.h"
 #include "timer/timer.h"
+#include "UART/uart.h"
+#include <stdio.h>
 
 /*******************************************************************************
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
  ******************************************************************************/
+
+#define IC_FTM_MOD	FTM_2	// Pin PB 18
+#define IC_FTM_CH	0
 
 #define PWM_MOD	FTM_0		// Pin PC 3
 #define PWM_CH	2
 
 #define PWM_FREQ	1000	// Hz
 
-/*******************************************************************************
- * ENUMERATIONS AND STRUCTURES AND TYPEDEFS
- ******************************************************************************/
-
-
-
-/*******************************************************************************
- * FUNCTION PROTOTYPES FOR PRIVATE FUNCTIONS WITH FILE LEVEL SCOPE
- ******************************************************************************/
-
-
-
-/*******************************************************************************
- * ROM CONST VARIABLES WITH FILE LEVEL SCOPE
- ******************************************************************************/
-
+#define UART_ID	0
+#define UART_BAUDRATE	230400
 
 /*******************************************************************************
  *******************************************************************************
@@ -53,24 +44,36 @@ bool flag = true;
  *******************************************************************************
  ******************************************************************************/
 
+void inCapCb(FTM_tick_t ticks) {
+
+	char msg[100];
+//	uint8_t cant = sprintf(msg, "%llu\r\n", ticks);
+	uint8_t cant = sprintf(msg, "%f\r\n", FTM_TICK2MS((double)ticks));
+	uartWriteMsg(UART_ID, msg, cant);
+}
+
 /* Función que se llama 1 vez, al comienzo del programa */
 void App_Init (void)
 {
 	timerInit();
+	uart_cfg_t config = {.baudrate=UART_BAUDRATE, .MSBF=false, .parity=NO_PARITY};
+	uartInit(UART_ID, config);
 	PWMInit(PWM_MOD, PWM_CH, PWM_FREQ);
 //	PWMStart(PWM_MOD, PWM_CH, 0.5);
+
+	ICInit(IC_FTM_MOD, IC_FTM_CH, CAPTURE_BOTH, inCapCb);
 }
 
 /* Función que se llama constantemente en un ciclo infinito */
 void App_Run (void)
 {
-	timerDelay(TIMER_MS2TICKS(500));
-	PWMStart(PWM_MOD, PWM_CH, 0.1*cont);
+	PWMStart(PWM_MOD, PWM_CH, 0.01*cont);
 
 	if (flag) cont++;
 	else cont--;
 
-	if (cont >= 10 || cont == 0) flag=!flag;
+	if (cont >= 100 || cont == 0) flag=!flag;
+	timerDelay(TIMER_MS2TICKS(100));
 }
 
 
