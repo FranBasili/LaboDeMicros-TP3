@@ -81,17 +81,19 @@ void CMP_Init (CMP_n cmp_n, CONSEC_SAMP sample_count, HYST_LEVEL hyst_level, INV
 
 	SIM->SCGC4 |=SIM_SCGC4_CMP_MASK;
 
-	cmp->CR0 = CMP_CR0_FILTER_CNT(sample_count) | CMP_CR0_HYSTCTR(hyst_level);
-	cmp->CR1 = CMP_CR1_WE_MASK | CMP_CR1_INV(polarity) | CMP_CR1_OPE_MASK;
+	cmp->CR0 = CMP_CR0_HYSTCTR(hyst_level);
+	cmp->CR1 = CMP_CR1_INV(polarity) | CMP_CR1_OPE_MASK;
 
 	portPtr[PIN2PORT(CMP_in_pins[cmp_n])]->PCR[PIN2NUM(CMP_in_pins[cmp_n])]=PORT_PCR_MUX(0x00); //In
 	portPtr[PIN2PORT((CMP_out_pins[cmp_n]))]->PCR[PIN2NUM(CMP_out_pins[cmp_n])]=PORT_PCR_MUX(0x06); //Out
 
+	//cmp->CR1 |= CMP_CR1_COS_MASK;
+
 	cmp->DACCR = CMP_DACCR_VOSEL(DAC_VALUE) | CMP_DACCR_DACEN_MASK | CMP_DACCR_VRSEL_MASK;	//VOsel=1/2 VCC
 
-	cmp->MUXCR = CMP_MUXCR_MSEL(CMP_ANALOG_REF) | CMP_MUXCR_PSEL(CMP_ANALOG_IN);
+	cmp->MUXCR = CMP_MUXCR_MSEL(CMP_ANALOG_REF) | CMP_MUXCR_PSEL(CMP_ANALOG_IN);// | CMP_MUXCR_PSTM_MASK;
 
-	cmp->FPR = CMP_FPR_FILT_PER(0x01); //????
+	//cmp->FPR = CMP_FPR_FILT_PER(0x01); //????
 
 	cmp->CR1 |= CMP_CR1_EN_MASK;	//Enable Module
 
@@ -112,6 +114,8 @@ void CMP0_IRQHandler(void){
 	for (int i=0;i<3; i++){
 		i++;
 	}
+	CMP_t cmp = CMPPorts[CMP0_t];
+	cmp->SCR |= (CMP_SCR_CFR_MASK | CMP_SCR_CFF_MASK);
 
 }
  
