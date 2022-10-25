@@ -23,18 +23,6 @@
 /*******************************************************************************
  * ENUMERATIONS AND STRUCTURES AND TYPEDEFS
  ******************************************************************************/
-
-
-/*******************************************************************************
- * VARIABLE PROTOTYPES WITH GLOBAL SCOPE
- ******************************************************************************/
-
-// +ej: extern unsigned int anio_actual;+
-
-
-/*******************************************************************************
- * FUNCTION PROTOTYPES WITH GLOBAL SCOPE
- ******************************************************************************/
 typedef enum
 {
 	CMP0_t,
@@ -55,10 +43,10 @@ typedef enum
 
 typedef enum
 {
-	level_0,
-	level_1,
-	level_2,
-	level_3
+	level_0,	// 5mV
+	level_1,	// 10mV
+	level_2,	// 20mV
+	level_3		// 30mV
 } HYST_LEVEL; //Hysteresis Level
 
 typedef enum
@@ -68,14 +56,25 @@ typedef enum
 } INVERT; //Polarity Invert
 
 
+/*******************************************************************************
+ * VARIABLE PROTOTYPES WITH GLOBAL SCOPE
+ ******************************************************************************/
+
+// +ej: extern unsigned int anio_actual;+
+
+
+/*******************************************************************************
+ * FUNCTION PROTOTYPES WITH GLOBAL SCOPE
+ ******************************************************************************/
+
+
 /**
- * @brief TODO: completar descripcion
- * @param param1 Descripcion parametro 1
- * @param param2 Descripcion parametro 2
- * @return Descripcion valor que devuelve
+ * @brief initialize comparator
+ * @param cmp_n number of cmp to use
+ * @param hyst_level hysteresis level (5mV,10mV,20mV,30mV)
+ * @param polarity decide if inverted output or not
 */
-// +ej: char lcd_goto (int fil, int col);+
-void CMP_Init (CMP_n cmp_n, CONSEC_SAMP sample_count, HYST_LEVEL hyst_level, INVERT polarity);
+void CMP_Init (CMP_n cmp_n, HYST_LEVEL hyst_level, INVERT polarity);
 
 
 /*******************************************************************************

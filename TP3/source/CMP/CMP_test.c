@@ -53,13 +53,12 @@
 void App_Init (void)
 {
 
-
+	CMP_Init(CMP0_t, level_0, no_inv);
 }
 
 void App_Run (void)
 {
 	uint8_t i=0;
-	CMP_Init(CMP0_t, cons_1, level_0, no_inv);
 	while(1){
 		i++;
 	}
