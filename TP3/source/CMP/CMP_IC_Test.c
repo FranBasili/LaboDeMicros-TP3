@@ -55,8 +55,8 @@ static void inCapCb(FTM_tick_t ticks);
 
 void App_Init (void)
 {
-	CMP_Init(CMP0_t, level_0, no_inv);
-	ICInit(FTM_0, 2, CAPTURE_RISING, inCapCb);
+	CMP_Init(CMP0_t, level_3, no_inv);
+	ICInit(FTM_1, 0, CAPTURE_BOTH, inCapCb);
 	uart_cfg_t config = {.baudrate=UART_BAUDRATE, .MSBF=false, .parity=NO_PARITY};
 	uartInit(UART_ID, config);
 }
