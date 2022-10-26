@@ -74,12 +74,12 @@ void ADCh_Init (ADChClkDiv_t divider){
 
 
 }
-void ADCh_Start(){
+void ADCh_Start(uint16_t frec){
 	ADC_Start(ADC0_t, 0x0C, ADC_mA); //Channel 12
 									 //mux A selected
 	portPtr[PIN2PORT(PTB2)]->PCR[PIN2NUM(PTB2)]=PORT_PCR_MUX(0x00); //PTB2
 
-	timerStart(timer_id, TIMER_MS2TICKS(0.1), TIM_MODE_PERIODIC, add_buff_cb); //TODO: arreglar tiempo
+	timerStart(timer_id, TIMER_MS2TICKS(1.0/frec), TIM_MODE_PERIODIC, add_buff_cb); //TODO: arreglar tiempo
 	
 }
 

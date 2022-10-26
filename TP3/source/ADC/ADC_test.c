@@ -64,7 +64,7 @@ void App_Init (void)
 void App_Run (void)
 {
   ADCh_Init(DIVh_t8);
-  ADCh_Start(); 
+  ADCh_Start(10);
   DACh_Init(10);
 
   // uint8_t arr[200];

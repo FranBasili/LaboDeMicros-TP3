@@ -48,8 +48,9 @@ void ADCh_Init ( ADChClkDiv_t divider);
 
 /**
  * @brief starts sampling
+ * @param frec sample frecuency ADC in KHz
 */
-void ADCh_Start();
+void ADCh_Start(uint16_t frec);
 
 /**
  * @brief get sampled data

@@ -37,13 +37,15 @@
  ******************************************************************************/
 
 /**
- * @brief TODO: completar descripcion
- * @param param1 Descripcion parametro 1
- * @param param2 Descripcion parametro 2
- * @return Descripcion valor que devuelve
+ * @brief Initialize DAC
+ * @param frec sample frecuency DAC in KHz
 */
-// +ej: char lcd_goto (int fil, int col);+
-void DACh_Init (uint16_t frec);		// in KHz
+void DACh_Init (uint16_t frec);
+
+/**
+ * @brief set data of DAC
+ * @param data data to set (12 bits)
+*/
 void DACh_SetData(uint16_t data);
 
 /*******************************************************************************
