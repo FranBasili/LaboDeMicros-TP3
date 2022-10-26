@@ -1,6 +1,6 @@
 /***************************************************************************//**
   @file		DAC_hal.c
-  @brief	+Descripcion del archivo+
+  @brief	+12 bits DAC+
   @author	KevinWahle
   @date		22 oct. 2022
  ******************************************************************************/
@@ -12,7 +12,6 @@
 #include "DAC_hal.h"
 #include "DAC.h"
 #include "timer/timer.h"
-#include "../buffer/circular_buffer_16.h"
 
 /*******************************************************************************
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
@@ -51,7 +50,7 @@ static void write_data_cb ();
 
 static tim_id_t timer_id;
 
-static circularBuffer16 buff;
+static circularBuffer16 * mybuff;
 
 
 /*******************************************************************************
@@ -59,21 +58,23 @@ static circularBuffer16 buff;
                         GLOBAL FUNCTION DEFINITIONS
  *******************************************************************************
  ******************************************************************************/
-void DACh_Init (uint16_t frec){		// in KHz
+void DACh_Init (uint16_t frec, circularBuffer16 * buff){		// in KHz
 	DAC_Init (DAC_0);
 
-	CBinit16(&buff,200);
+	//CBinit16(&buff,200);
+
+	mybuff=buff;
 
 	timerInit();
 	timer_id = timerGetId();
 
-	timerStart(timer_id, TIMER_MS2TICKS(1.0/frec), TIM_MODE_PERIODIC, write_data_cb); //TODO: arreglar tiempo
+	timerStart(timer_id, TIMER_MS2TICKS(1.0/frec), TIM_MODE_PERIODIC, write_data_cb);
 
 }
 
-void DACh_SetData(uint16_t data){
-	CBputByte16(&buff, data);
-}
+/*void DACh_SetData(){
+	CBputByte16(mybuff, data);
+}*/
 
 /*******************************************************************************
  *******************************************************************************
@@ -82,8 +83,8 @@ void DACh_SetData(uint16_t data){
  ******************************************************************************/
 
 void write_data_cb (){
-	if (!CBisEmpty16(&buff)){
-		DAC_SetData(DAC_0, CBgetByte16(&buff));
+	if (!CBisEmpty16(mybuff)){
+		DAC_SetData(DAC_0, CBgetByte16(mybuff));
 	}
 }
 

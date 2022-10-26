@@ -12,7 +12,6 @@
 // +Incluir el header propio (ej: #include "template.h")+
 #include "ADC/ADC_hal.h"
 #include "ADC.h"
-#include "../buffer/circular_buffer.h"
 #include "../MCAL/gpio.h"
 #include "hardware.h"
 
@@ -22,7 +21,7 @@
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
  ******************************************************************************/
 
-#define NBITS 8 //8 bits implementation
+//#define NBITS 12 //12 bits implementation
 #define PTB2 PORTNUM2PIN(PB,2)
 
 /*******************************************************************************
@@ -56,7 +55,7 @@ static PORT_Type* const portPtr[] = PORT_BASE_PTRS;
 
 static tim_id_t timer_id;
 
-static circularBuffer buff;
+static circularBuffer16 * mybuff;
 
 /*******************************************************************************
  *******************************************************************************
@@ -64,10 +63,12 @@ static circularBuffer buff;
  *******************************************************************************
  ******************************************************************************/
 
-void ADCh_Init (ADChClkDiv_t divider){
-	ADC_Init(ADC0_t, divider, NBITS , ADC_c24);
+void ADCh_Init (ADChClkDiv_t divider, circularBuffer16 * buff){
+	ADC_Init(ADC0_t, divider, ADC_b12 , ADC_c24);
 
-	CBinit(&buff,200);
+	//CBinit(&buff,200);
+
+	mybuff=buff;
 	
 	timerInit();
 	timer_id = timerGetId();
@@ -79,18 +80,18 @@ void ADCh_Start(uint16_t frec){
 									 //mux A selected
 	portPtr[PIN2PORT(PTB2)]->PCR[PIN2NUM(PTB2)]=PORT_PCR_MUX(0x00); //PTB2
 
-	timerStart(timer_id, TIMER_MS2TICKS(1.0/frec), TIM_MODE_PERIODIC, add_buff_cb); //TODO: arreglar tiempo
+	timerStart(timer_id, TIMER_MS2TICKS(1.0/frec), TIM_MODE_PERIODIC, add_buff_cb);
 	
 }
 
 
-bool ADCh_IsReady(){
-	return CBisEmpty(&(buff));
+/*bool ADCh_IsReady(){
+	return CBisEmpty16(mybuff);
 }
 
-uint8_t get_ADCh(){
-	return CBgetByte(&buff);
-}
+uint16_t get_ADCh(){
+	return CBgetByte16(mybuff);
+}*/
 
 
 
@@ -103,7 +104,7 @@ void add_buff_cb (){
 	
 	if (ADC_IsReady(ADC0_t)){
 		ADCData_t data =ADC_getData(ADC0_t);
-		CBputByte(&buff, (uint8_t)data);	//Todo: data se castea solo?
+		CBputByte16(mybuff, data);
 	}
 }
 

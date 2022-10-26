@@ -12,6 +12,7 @@
  * INCLUDE HEADER FILES
  ******************************************************************************/
 #include <stdint.h>
+#include "../buffer/circular_buffer_16.h"
 
 
 /*******************************************************************************
@@ -39,14 +40,15 @@
 /**
  * @brief Initialize DAC
  * @param frec sample frecuency DAC in KHz
+ * buff buffer to read data
 */
-void DACh_Init (uint16_t frec);
+void DACh_Init (uint16_t frec, circularBuffer16 * buff);
 
 /**
  * @brief set data of DAC
  * @param data data to set (12 bits)
 */
-void DACh_SetData(uint16_t data);
+//void DACh_SetData();
 
 /*******************************************************************************
  ******************************************************************************/

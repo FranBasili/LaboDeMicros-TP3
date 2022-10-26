@@ -1,6 +1,6 @@
 /***************************************************************************//**
   @file     ADC_hall.h
-  @brief    +Descripcion del archivo+
+  @brief    +12 bits ADC+
   @author   KevinWahle
   @date		16 oct. 2022
  ******************************************************************************/
@@ -13,6 +13,8 @@
  ******************************************************************************/
 #include <stdint.h>
 #include <stdbool.h>
+#include "../buffer/circular_buffer_16.h"
+
 /*******************************************************************************
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
  ******************************************************************************/
@@ -43,8 +45,9 @@ typedef enum
 /**
  * @brief initialize ADC_0 module
  * @param divider sample time divider to bus clock
+ * @param buff buffer to save data
 */
-void ADCh_Init ( ADChClkDiv_t divider);
+void ADCh_Init ( ADChClkDiv_t divider, circularBuffer16 * buff);
 
 /**
  * @brief starts sampling
@@ -56,13 +59,13 @@ void ADCh_Start(uint16_t frec);
  * @brief get sampled data
  * @return sampled data
 */
-uint8_t get_ADCh();
+//uint16_t get_ADCh();
 
 /**
  * @brief check if there is sampled data
  * @return true if there is data available
 */
-bool ADCh_IsReady();
+//bool ADCh_IsReady();
 
 
 /*******************************************************************************
