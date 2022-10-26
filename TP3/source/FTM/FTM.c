@@ -91,6 +91,7 @@ static uint32_t ICTOFCont[FTM_COUNT][FTM_CH_COUNT];
 
 static uint16_t ICChannelValue[FTM_COUNT][FTM_CH_COUNT];
 static FTM_tick_t ICLastTicks[FTM_COUNT][FTM_CH_COUNT];
+static bool ICnewEdge[FTM_COUNT][FTM_CH_COUNT];
 
 /*******************************************************************************
  *******************************************************************************
@@ -189,7 +190,11 @@ void ICInit(FTM_MODULE ftm, FTM_CHANNEL channel, IC_CAPTURE_EDGE edge, callbackI
 		pFTM->CONTROLS[channel].CnSC = FTM_CnSC_EDGE(edge) | FTM_CnSC_CHIE_MASK;
 
 		// Pin configuration
-		portPtr[FTMPinPort[ftm][channel]]->PCR[FTMPinNum[ftm][channel]] = PORT_PCR_MUX(FTMPinMuxAlt[ftm][channel]);
+//		portPtr[FTMPinPort[ftm][channel]]->PCR[FTMPinNum[ftm][channel]] = PORT_PCR_MUX(FTMPinMuxAlt[ftm][channel]);
+		// Input from CMP
+		// TODO
+		SIM->SOPT4 = SIM_SOPT4_FTM1CH0SRC(0x01);
+
 
 		// Filter enable
 		//TODO
@@ -218,7 +223,28 @@ void ICInit(FTM_MODULE ftm, FTM_CHANNEL channel, IC_CAPTURE_EDGE edge, callbackI
 */
 FTM_tick_t ICGetCont(FTM_MODULE ftm, FTM_CHANNEL channel) {
 
-	return 0;
+	// TODO: Disable interrupts
+	ICnewEdge[ftm][channel] = 0;
+	// TODO: Enable interrupts
+
+	return ICLastTicks[ftm][channel];
+
+}
+
+/**
+ * @brief Devuelve si hay un nuevo flanco detectado
+ * @param ftm: módulo FTM
+ * @param channel: Canal del modulo FTM
+ * @return true si hay un nuevo flanco
+*/
+bool ICisEdge(FTM_MODULE ftm, FTM_CHANNEL channel) {
+
+	// TODO: Disable interrupts
+	bool new = ICnewEdge[ftm][channel];
+	if (new) ICnewEdge[ftm][channel] = 0;
+	// TODO: Enable interrupts
+
+	return new;
 }
 
 /**
@@ -267,6 +293,7 @@ void FTM_IRQHandler(FTM_MODULE ftm) {
 
 				// Exec callback
 				if (ICCbPtrs[ftm][i] != NULL) ICCbPtrs[ftm][i](ICLastTicks[ftm][i]);
+				else ICnewEdge[ftm][i] = true;
 			}
 		}
 		pFTM->STATUS = 0x00;	// Clear all flags
