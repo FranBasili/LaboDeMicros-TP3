@@ -25,7 +25,7 @@
 #define fH1     2200
 #define fH2     2400
 
-typedef uint16_t* fskbuffer; 
+typedef uint16_t fskbuffer[BUFFSIZE];
 
 const uint16_t senoidal[SINSAMPLES] = {2048, 2098, 2148, 2199, 2249, 2299, 2349, 2399, 2449, 2498, 2547, 2596,
                                        2644, 2692, 2740, 2787, 2834, 2880, 2926, 2972, 3016, 3061, 3104, 3147,
@@ -54,7 +54,7 @@ const uint16_t senoidal[SINSAMPLES] = {2048, 2098, 2148, 2199, 2249, 2299, 2349,
  * ENUMERATIONS AND STRUCTURES AND TYPEDEFS
  ******************************************************************************/
 void fskModulatorInit(uint8_t config_version);
-void fskModulate(uint8_t msg, uint16_t *buffer);
+void fskModulate(uint8_t msg, fskbuffer buffer);
 
 /*******************************************************************************
  * FUNCTION PROTOTYPES WITH GLOBAL SCOPE

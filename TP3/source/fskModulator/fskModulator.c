@@ -9,15 +9,15 @@ void fskModulatorInit(uint8_t config_version)
         index_step[1]=index_versions[config_version][1];
 }
 
-void fskModulate(uint8_t msg, uint16_t buffer[BUFFSIZE])
+void fskModulate(uint8_t msg, fskbuffer buffer)
 {
         uint16_t counter=0;
         uint8_t fsk_index=0, step; 
-        for (int bit = 7; bit >= 0 && bit<=7; bit--){
-                step = index_step[(msg>>bit) & 0x01]; 
+        for (int bit = 7; bit >= 0 && bit<=7; bit--){                   // Para cada bit
+                step = index_step[(msg>>bit) & 0x01];                   // Calculo el salto     
                 for (uint8_t cont = 0; cont<43; cont++){
-                        buffer[counter++] = senoidal[fsk_index];
-                        fsk_index+= step;
+                        buffer[counter++] = senoidal[fsk_index];        // Y copio 42 muestras        
+                        fsk_index+= step;                               // Distanciadas en ese salto
                 }
         }
 }

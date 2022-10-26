@@ -5,14 +5,14 @@
 #define SINSAMPLES  256
 #define SINFREC     200
 #define DACFREQ     SINFREC*SINSAMPLES
-#define BUFFSIZE    350
+#define BUFFSIZE    336
 
 #define fL1     1200
 #define fL2     1200
 #define fH1     2200
 #define fH2     2400
 
-typedef uint16_t* fskbuffer; 
+typedef uint16_t fskbuffer[BUFFSIZE]; 
 
 const uint16_t senoidal[SINSAMPLES] = {2048, 2098, 2148, 2199, 2249, 2299, 2349, 2399, 2449, 2498, 2547, 2596,
                                        2644, 2692, 2740, 2787, 2834, 2880, 2926, 2972, 3016, 3061, 3104, 3147,
@@ -41,9 +41,9 @@ const uint16_t senoidal[SINSAMPLES] = {2048, 2098, 2148, 2199, 2249, 2299, 2349,
  * ENUMERATIONS AND STRUCTURES AND TYPEDEFS
  ******************************************************************************/
 void fskModulatorInit(uint8_t config_version);
-void fskModulate(uint8_t msg, uint16_t *buffer);
+void fskModulate(uint8_t msg, fskbuffer buffer);
 
-const uint8_t index_versions[][2] = {{fL1 / SINFREC, fH1 / SINFREC}, {fL2 / SINFREC, fH2 / SINFREC}};
+const uint8_t index_versions[][2] = {{fH1 / SINFREC, fL1 / SINFREC}, {fH2 / SINFREC, fL2 / SINFREC}};
 static uint8_t index_step[2];
 
 void fskModulatorInit(uint8_t config_version)
@@ -52,27 +52,27 @@ void fskModulatorInit(uint8_t config_version)
         index_step[1]=index_versions[config_version][1];
 }
 
-void fskModulate(uint8_t msg, uint16_t buffer[BUFFSIZE])
+void fskModulate(uint8_t msg, fskbuffer buffer)
 {
         uint16_t counter=0;
         uint8_t fsk_index=0, step; 
-        for (int bit = 7; bit >= 0 && bit<=7; bit--){
-                step = index_step[(msg>>bit) & 0x01]; 
+        for (int bit = 7; bit >= 0 && bit<=7; bit--){           
+                step = index_step[(msg>>bit) & 0x01];           
                 for (uint8_t cont = 0; cont<43; cont++){
                         buffer[counter++] = senoidal[fsk_index];
-                        fsk_index+= step;
+                        fsk_index+= step;                       
                 }
         }
 }
 
 int main(){
-    uint16_t buff[BUFFSIZE];
+    fskbuffer buff;
     fskModulatorInit(0);
-    fskModulate((uint8_t)10100101, buff);
+    fskModulate((uint8_t)0b10100101, buff);
     
-/*    for(long int i=0; i<351; i++){
+    for(long int i=0; i<(BUFFSIZE); i++){
         printf("%d ,", buff[i]);
-    }*/
+    }
     
     return 1;
 }
