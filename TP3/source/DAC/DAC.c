@@ -58,7 +58,7 @@
  ******************************************************************************/
 
 // +ej: static int temperaturas_actuales[4];+
-static PORT_Type* const portPtr[] = PORT_BASE_PTRS;
+//static PORT_Type* const portPtr[] = PORT_BASE_PTRS;
 
 
 /*******************************************************************************

@@ -12,7 +12,7 @@ bool ADC_interrupt[2] = {false, false};
 typedef ADC_Type *ADC_t;
 
 static ADC_Type* ADCPorts[] = ADC_BASE_PTRS;
-static PORT_Type* portPtrs[] = PORT_BASE_PTRS;
+//static PORT_Type* portPtrs[] = PORT_BASE_PTRS;
 
 
 
