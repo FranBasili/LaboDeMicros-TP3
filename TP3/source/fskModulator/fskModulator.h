@@ -29,17 +29,26 @@
 /*******************************************************************************
  * ENUMERATIONS AND STRUCTURES AND TYPEDEFS
  ******************************************************************************/
-uint16_t* fskModulatorInit(uint8_t config_version);
-void fskModulate(void);
-void fskSetMsg(uint8_t word);
 
 /*******************************************************************************
  * FUNCTION PROTOTYPES WITH GLOBAL SCOPE
  ******************************************************************************/
 
+/**
+ * @brief Inicializador de fsk
+ * @param config_version: version de fsk	--> 0 version 1
+* 											--> 1 version 2
+*/
+uint16_t* fskModulatorInit(uint8_t config_version);
 
+
+/**
+ * @brief Setea la nueva palabra a mandar
+ * @param word: uint8_t a transmitir
+*/
+void fskSetMsg(uint8_t word);
 
 /*******************************************************************************
  ******************************************************************************/
 
-#endif // _FSK2UART_H_
+#endif // _FSKMOD_H_

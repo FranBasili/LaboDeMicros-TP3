@@ -6,6 +6,8 @@ static uint8_t index_step[2], msg[7];
 static uint16_t counter;
 static uint16_t* fskOut;
 
+void fskModulate(void);
+
 uint16_t senoidal[SINSAMPLES] = {	2048, 2098, 2148, 2199, 2249, 2299, 2349, 2399, 2449, 2498,
 								 	2547, 2596, 2644, 2692, 2740, 2787, 2834, 2880, 2926, 2972,
 									3016, 3061, 3104, 3147, 3189, 3231, 3272, 3312, 3351, 3390,
