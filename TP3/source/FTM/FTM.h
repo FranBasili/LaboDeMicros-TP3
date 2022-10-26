@@ -13,6 +13,7 @@
  ******************************************************************************/
 
 #include <stdint.h>
+#include <stdbool.h>
 
 /*******************************************************************************
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
@@ -22,6 +23,7 @@
 
 #define FTM_TICK_TIME	20	// ns
 #define FTM_TICK2NS(x)	((x)*FTM_TICK_TIME)			// ns
+#define FTM_TICK2US(x)	((x)*FTM_TICK_TIME/1000)			// us
 #define FTM_TICK2MS(x)	((x)*FTM_TICK_TIME/1000000)	// ms
 
 /*******************************************************************************
@@ -75,6 +77,9 @@ void PWMInit(FTM_MODULE ftm, FTM_CHANNEL channel, uint32_t freq);
 void PWMStart(FTM_MODULE ftm, FTM_CHANNEL channel, double duty);
 
 
+void PWMFromPtr(void* ptr);
+
+
 ////// Input Capture //////
 
 /**
@@ -93,6 +98,14 @@ void ICInit(FTM_MODULE ftm, FTM_CHANNEL channel, IC_CAPTURE_EDGE edge, callbackI
  * @return valore del contador del canal
 */
 FTM_tick_t ICGetCont(FTM_MODULE ftm, FTM_CHANNEL channel);
+
+/**
+ * @brief Devuelve si hay un nuevo flanco detectado
+ * @param ftm: módulo FTM
+ * @param channel: Canal del modulo FTM
+ * @return true si hay un nuevo flanco
+*/
+bool ICisEdge(FTM_MODULE ftm, FTM_CHANNEL channel);
 
 /**
  * @brief Reinicia el contador y el valor del canal
