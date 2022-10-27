@@ -37,7 +37,7 @@
 
 #define PER1  833 //μseg
 #define PER0  417 //μseg
-#define TOL   50  //μseg
+#define TOL   120  //μseg
 
 #define START_BIT 0
 #define STOP_BIT  1

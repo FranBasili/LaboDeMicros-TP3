@@ -44,7 +44,7 @@ uint16_t** fskModulatorInit(uint8_t config_version)
 	PITInit(PIT_0, PIT_NS2TICK(19530), &fskModulate);
 	counter=MSGLEN+1;
 	PITStart(PIT_0);
-	return &fskOut;
+	return (uint16_t**)&fskOut;
 }
 
 void fskSetMsg(uint16_t word)
