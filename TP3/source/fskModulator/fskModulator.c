@@ -2,7 +2,7 @@
 #include "PIT\PIT.h"
 
 const uint8_t index_versions[][2] = {{fH1 / SINFREC, fL1 / SINFREC}, {fH2 / SINFREC, fL2 / SINFREC}};
-static uint8_t index_step[2], msg[7];
+static uint8_t index_step[2], msg[MSGBITS];
 static uint16_t counter;
 static uint16_t* fskOut;
 
@@ -42,6 +42,7 @@ uint16_t** fskModulatorInit(uint8_t config_version)
 	index_step[1]=index_versions[config_version][1];
 	fskOut=senoidal;
 	PITInit(PIT_0, PIT_NS2TICK(19530), &fskModulate);
+	PITStart(PIT_0);
 	return &fskOut;
 }
 
@@ -49,15 +50,10 @@ void fskSetMsg(uint8_t word)
 {
 	static uint8_t running=0;
 
-	for (uint8_t i=0; i<8; i++){
+	for (uint8_t i=0; i<MSGBITS; i++){
 		msg[i]= (word>>i) & 1;
 	}
 	counter=0;
-
-	if(!running){
-		PITStart(PIT_0);
-		running++;
-	}
 }
 
 void fskModulate(void)
