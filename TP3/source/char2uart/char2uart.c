@@ -58,6 +58,23 @@ void PushBit(char2uartParser * parser, bool bit){
 	}
 }
 
+void Push8Bit(char2uartParser * parser, uint8_t byte){
+
+	if (parser==NULL){
+		return;
+	}
+
+	parser->bitsParsed = 0;
+	parser->parity = 1;
+
+	uint8_t mask = 0x01;
+
+	for (int i=0; i<8; i++){
+		bool bit = (byte & (mask << (7-i))) == 0 ? 0 : 1;
+		PushBit(parser, bit);
+	}
+}
+
 bool IsNewByte(char2uartParser * parser){
 	return !CBisEmpty16(&parser->bytes);
 }
