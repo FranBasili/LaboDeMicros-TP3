@@ -39,7 +39,7 @@
  * @param config_version: version de fsk	--> 0 version 1
 * 											--> 1 version 2
 */
-uint16_t* fskModulatorInit(uint8_t config_version);
+uint16_t** fskModulatorInit(uint8_t config_version);
 
 
 /**

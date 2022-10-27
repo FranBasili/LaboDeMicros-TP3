@@ -36,13 +36,13 @@ uint16_t senoidal[SINSAMPLES] = {	2048, 2098, 2148, 2199, 2249, 2299, 2349, 2399
 									1796, 1846, 1896, 1947, 1997, 2047};
 
 
-uint16_t* fskModulatorInit(uint8_t config_version)
+uint16_t** fskModulatorInit(uint8_t config_version)
 {
 	index_step[0]=index_versions[config_version][0];
 	index_step[1]=index_versions[config_version][1];
 	fskOut=senoidal;
 	PITInit(PIT_0, PIT_NS2TICK(19530), &fskModulate);
-	return fskOut;
+	return &fskOut;
 }
 
 void fskSetMsg(uint8_t word)
