@@ -87,7 +87,7 @@ ByteStruct getByte(uart2charParser * parser){
 static uint8_t _8bits2char(uint8_t * bitsChain){
 	uint8_t x = 0;
 	for(uint8_t i = 0; i < 8; i++){
-		x += bitsChain[7-i] << i;
+		x += bitsChain[i] << i;
 	}
 	return x;
 }
