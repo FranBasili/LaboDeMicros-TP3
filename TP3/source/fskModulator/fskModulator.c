@@ -70,6 +70,7 @@ void fskModulate(void)
 			counter++;
 			fsk_index+=step;
         }
+
         else{							// Enviando IDLE
         	fskOut = &(senoidal[fsk_index]);
 			fsk_index += index_step[IDLE];	//Salamos de a paso constante

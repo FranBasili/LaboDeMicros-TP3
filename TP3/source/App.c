@@ -105,16 +105,12 @@ void App_Run (void)
 		uint8_t data;
 		uartReadMsg(UART_ID, (char*)&data, 1);
 		if(data!=0x0A){
-			//uartWriteMsg(UART_ID, (char*)&data, 1);
-
 			Push8Bit(&uartParserRx, data);
 			if(IsNewByte(&uartParserRx)){
 				uint16_t dataaux;
-				//uartWriteMsg(UART_ID, (char*)&data, 1)
 				dataaux=GetByte(&uartParserRx);
 				fskSetMsg(dataaux);
 			}
-			//fskSetMsg(data);
 		}
 	}
 

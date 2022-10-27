@@ -18,7 +18,7 @@
 #define SINSAMPLES  256
 #define SINFREC     200
 #define DACFREQ     (SINFREC*SINSAMPLES)
-#define MSGBITS     10
+#define MSGBITS     11
 #define LENPERBIT   42
 #define MSGLEN      (MSGBITS*LENPERBIT)
 
