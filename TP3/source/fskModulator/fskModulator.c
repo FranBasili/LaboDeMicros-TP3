@@ -1,5 +1,6 @@
 #include "fskModulator\fskModulator.h"
 #include "PIT\PIT.h"
+#include "../buffer/circular_buffer_16.h"
 
 const uint8_t index_versions[][2] = {{fH1 / SINFREC, fL1 / SINFREC}, {fH2 / SINFREC, fL2 / SINFREC}};
 static uint8_t index_step[2], msg[MSGBITS];
@@ -39,7 +40,7 @@ uint16_t senoidal[SINSAMPLES] = {	2048, 2098, 2148, 2199, 2249, 2299, 2349, 2399
 
 uint16_t** fskModulatorInit(uint8_t config_version)
 {
-	CBinit16(fskInBuffer, FSKINBUFF);
+	CBinit16(&fskInBuffer, FSKINBUFF);
 
 	index_step[0]=index_versions[config_version][0];
 	index_step[1]=index_versions[config_version][1];
@@ -53,7 +54,7 @@ uint16_t** fskModulatorInit(uint8_t config_version)
 
 void fskSetMsg(uint16_t word)
 {
-	CBputByte16(fskInBuffer, word);
+	CBputByte16(&fskInBuffer, word);
 }
 
 void fskModulate(void)
@@ -72,9 +73,9 @@ void fskModulate(void)
         }
 
         else{
-        	if(!CBisEmpty16(fskInBuffer))	// Proceso la sgte palabra
+        	if(!CBisEmpty16(&fskInBuffer))	// Proceso la sgte palabra
         	{
-        		word= CBgetByte16(fskInBuffer);
+        		word= CBgetByte16(&fskInBuffer);
         		for (uint8_t i=0; i<MSGBITS; i++){
         			msg[i]= (word>>(MSGBITS-1-i)) & 0x0001;
         		}

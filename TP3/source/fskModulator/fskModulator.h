@@ -21,7 +21,7 @@
 #define MSGBITS     11
 #define LENPERBIT   42
 #define MSGLEN      (MSGBITS*LENPERBIT)
-#define FSKINBUFF	200
+#define FSKINBUFF	10
 
 #define fL1     1200
 #define fL2     1200
