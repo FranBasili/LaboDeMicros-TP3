@@ -71,7 +71,7 @@ static uart2charParser uartParser;
 /* Función que se llama 1 vez, al comienzo del programa */
 void App_Init (void)
 {
-    #ifdef VERSION==1
+    #if VERSION==1
 
     //UART Init
 	initUart2charParser(&uartParser);
@@ -92,7 +92,7 @@ void App_Init (void)
 /* Función que se llama constantemente en un ciclo infinito */
 void App_Run (void)
 {
-    #ifdef VERSION==1
+    #if VERSION==1
     #endif
 
 //  static int i = 0;
