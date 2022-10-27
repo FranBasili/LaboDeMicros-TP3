@@ -26,8 +26,8 @@
 
 #define UART_ID 0
 #define UART_BAUDRATE	1200
-// #define UART_PARITY		ODD_PARITY
-#define UART_PARITY		NO_PARITY
+#define UART_PARITY		ODD_PARITY
+//#define UART_PARITY		NO_PARITY
 
 #define FTM_MOD FTM_1
 #define FTM_CH  0
