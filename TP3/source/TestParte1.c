@@ -13,13 +13,21 @@
 #include "fsk2uart/fsk2uart.h"
 #include "buffer/circular_buffer_16.h"
 #include "ADC/ADC_hal.h"
+#include "UART/uart.h"
 /*******************************************************************************
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
  ******************************************************************************/
 circularBuffer16 buff;
 
+#define UART_ID			0
+#define UART_BAUDRATE	115200
+
 void App_Init (void)
 {
+    //================= uart =======================
+	uart_cfg_t cfg = {.MSBF = false, .baudrate = UART_BAUDRATE, .parity = NO_PARITY};
+	uartInit(UART_ID, cfg);
+    //==============================================
     CBinit16(&buff, 200);
 	//uart_cfg_t cfg = {.MSBF = false, .baudrate = UART_BAUDRATE, .parity = NO_PARITY};
 	 ADCh_Init(DIVh_t8, &buff);
@@ -41,7 +49,8 @@ void App_Run (void)
         }
 		while(isNewByte(&parser)){
 			ByteStruct By = getByte(&parser);
-			printf("%c ", By.byte);
+			//printf("%c ", By.byte);
+            uartWriteMsg(UART_ID, By.byte, 1);
 		}
-    }
+
 }

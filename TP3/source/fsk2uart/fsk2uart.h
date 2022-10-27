@@ -39,7 +39,7 @@ typedef struct{
 
 void initDSP_FSK_2_UART(void);
 
-BitStruct pushSample(double newSample);
+BitStruct pushSample(uint16_t newSample);
 
 //BitStruct getBit(void);
 
