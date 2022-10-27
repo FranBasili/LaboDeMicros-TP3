@@ -17,7 +17,7 @@
  ******************************************************************************/
 #define SINSAMPLES  256
 #define SINFREC     200
-#define DACFREQ     SINFREC*SINSAMPLES
+#define DACFREQ     (SINFREC*SINSAMPLES)
 #define MSGLEN    336
 
 #define fL1     1200
