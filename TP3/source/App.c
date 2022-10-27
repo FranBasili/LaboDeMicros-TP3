@@ -12,6 +12,9 @@
 #include "FTM/FTM.h"
 #include "CMP/CMP.h"
 #include "uart2char/uart2char.h"
+#include "fskModulator/fskModulator.h"
+#include <stddef.h>
+#include <stdio.h>
 
 /*******************************************************************************
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
@@ -21,15 +24,15 @@
 
 
 #define UART_ID 0
-#define UART_BAUDRATE 1200
-#define UART_PARITY ODD_PARITY
+#define UART_BAUDRATE	1200
+#define UART_PARITY		ODD_PARITY
 
 #define FTM_MOD FTM_1
 #define FTM_CH  0
 
 #define PER1  833 //μseg
-#define PER0  417 //μseg 
-#define TOL   10  //μseg
+#define PER0  417 //μseg
+#define TOL   50  //μseg
 
 #define START_BIT 0
 #define STOP_BIT  1
@@ -37,7 +40,7 @@
  * ENUMERATIONS AND STRUCTURES AND TYPEDEFS
  ******************************************************************************/
 
-typedef enum {IDLE, DATA} DECODER_STATE;
+typedef enum {IDLE_STATE, DATA_STATE} DECODER_STATE;
 
 /*******************************************************************************
  * FUNCTION PROTOTYPES FOR PRIVATE FUNCTIONS WITH FILE LEVEL SCOPE
@@ -70,33 +73,33 @@ static uart2charParser uartParser;
 void App_Init (void)
 {
 
-	ICInit(FTM_MOD, FTM_CH, CAPTURE_BOTH, NULL);
-  CMP_Init(CMP0_t, level_3, no_inv);
-  initUart2charParser(&uartParser);
+	CMP_Init(CMP0_t, level_3, no_inv);
+	ICInit(FTM_MOD, FTM_CH, CAPTURE_RISING, NULL);
+	initUart2charParser(&uartParser);
 	uart_cfg_t config = {.baudrate=UART_BAUDRATE, .MSBF=false, .parity=UART_PARITY};
 	uartInit(UART_ID, config);
-  fskModulatorInit(VERSION-1)
+//	fskModulatorInit(VERSION-1);
 
 }
 
 /* Función que se llama constantemente en un ciclo infinito */
 void App_Run (void)
 {
-  uint8_t byte;
 
-  if (uartIsRxMsg(UART_ID)) {   // Recibo por UART
-    uint8_t data;
-    uartReadMsg(UART_ID, &data, 1);
-    fskSetMsg(data);
-  }
+//  static int i = 0;
+//  static uint8_t arr[20];
+	uint8_t byte;
 
-  
-  
-  if(byteDecoder(&byte)){
-    if(uartIsTxMsgComplete(UART_ID)){
-      uartWriteMsg(UART_ID, &byte, 1);
-    }
-  }
+//  if (uartIsRxMsg(UART_ID)) {   // Recibo por UART
+//    uint8_t data;
+//    uartReadMsg(UART_ID, &data, 1);
+////    fskSetMsg(data);
+//  }
+//
+
+	if (byteDecoder(&byte)) {
+	   uartWriteMsg(UART_ID, (char*)&byte, 1);
+	}
 
 }
 
@@ -115,16 +118,16 @@ bool byteDecoder(uint8_t* byte) {
 
   switch (state) {
 
-    case IDLE:
+    case IDLE_STATE:
       if (isNewBit(&bit) && bit == START_BIT)  {    // START detected
-        state = DATA;
+        state = DATA_STATE;
       }
       break;
 
-    case DATA:
+    case DATA_STATE:
       if (isNewBit(&bit)) {
         if (isNewByte(&uartParser)) {
-          
+          state = IDLE_STATE;
           if (bit == STOP_BIT) {    // STOP
             ByteStruct newByte = getByte(&uartParser);
             if (!newByte.error) {
@@ -132,7 +135,6 @@ bool byteDecoder(uint8_t* byte) {
               return true;
             }
           }
-          state = IDLE;
         }
         else {
           pushBit(&uartParser, bit);
@@ -150,35 +152,33 @@ bool byteDecoder(uint8_t* byte) {
 
 
 bool isNewBit(bool* bit){
-  
+
   static uint8_t counter=0;
-  
+
   if (ICisEdge(FTM_MOD, FTM_CH)) {
     uint16_t period = FTM_TICK2US(ICGetCont(FTM_MOD, FTM_CH));
 
     if (period < PER1+TOL && period > PER1-TOL) {        // 1
-    if(counter==0){
-      *bit=1;
-    }
-    else{
-      return false;
-    }
+		if(counter==0){
+		  *bit=1;
+		  return true;
+		}
+		else {
+			counter = 0;
+		}
   }
   else if (period < PER0+TOL && period > PER0-TOL) {    // 0
     counter++;
-    if (counter==2){
+    if (counter==2) {
       *bit=0;
       counter=0;
+      return true;
     }
   }
-  else{
-    return false;
-  }
 }
-else{
+  
   return false;
-}
-return true;
+
 }
 /*******************************************************************************
  ******************************************************************************/
