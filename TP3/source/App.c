@@ -30,6 +30,9 @@
 #define FTM_MOD FTM_1
 #define FTM_CH  0
 
+#define PWM_MOD FTM_0
+#define PWM_CH  2
+
 #define PER1  833 //μseg
 #define PER0  417 //μseg
 #define TOL   50  //μseg
@@ -62,6 +65,7 @@ bool isNewBit(bool* bit);
  ******************************************************************************/
 
 static uart2charParser uartParser;
+static uint16_t** fskPtr;
 
 /*******************************************************************************
  *******************************************************************************
@@ -73,32 +77,34 @@ static uart2charParser uartParser;
 void App_Init (void)
 {
 
-	CMP_Init(CMP0_t, level_3, no_inv);
-	ICInit(FTM_MOD, FTM_CH, CAPTURE_RISING, NULL);
-	initUart2charParser(&uartParser);
 	uart_cfg_t config = {.baudrate=UART_BAUDRATE, .MSBF=false, .parity=UART_PARITY};
 	uartInit(UART_ID, config);
-//	fskModulatorInit(VERSION-1);
+	initUart2charParser(&uartParser);
+
+	CMP_Init(CMP0_t, level_3, no_inv);
+	
+	ICInit(FTM_MOD, FTM_CH, CAPTURE_RISING, NULL);
+
+	fskPtr = fskModulatorInit(VERSION-1);
+	
+	PWMInit(PWM_MOD, PWM_CH, DACFREQ);
+	PWMFromPtr(PWM_MOD, PWM_CH, fskPtr);
 
 }
 
 /* Función que se llama constantemente en un ciclo infinito */
 void App_Run (void)
 {
-
-//  static int i = 0;
-//  static uint8_t arr[20];
 	uint8_t byte;
 
-//  if (uartIsRxMsg(UART_ID)) {   // Recibo por UART
-//    uint8_t data;
-//    uartReadMsg(UART_ID, &data, 1);
-////    fskSetMsg(data);
-//  }
-//
+	if (uartIsRxMsg(UART_ID)) {   // Recibo por UART
+		uint8_t data;
+		uartReadMsg(UART_ID, (char*)&data, 1);
+		fskSetMsg(data);
+	}
 
 	if (byteDecoder(&byte)) {
-	   uartWriteMsg(UART_ID, (char*)&byte, 1);
+		uartWriteMsg(UART_ID, (char*)&byte, 1);
 	}
 
 }
