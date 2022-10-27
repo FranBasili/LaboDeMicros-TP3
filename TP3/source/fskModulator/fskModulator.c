@@ -5,6 +5,7 @@ const uint8_t index_versions[][2] = {{fH1 / SINFREC, fL1 / SINFREC}, {fH2 / SINF
 static uint8_t index_step[2], msg[MSGBITS];
 static uint16_t counter;
 static uint16_t* fskOut;
+static circularBuffer16 fskInBuffer;
 
 void fskModulate(void);
 
@@ -38,29 +39,27 @@ uint16_t senoidal[SINSAMPLES] = {	2048, 2098, 2148, 2199, 2249, 2299, 2349, 2399
 
 uint16_t** fskModulatorInit(uint8_t config_version)
 {
+	CBinit16(fskInBuffer, FSKINBUFF);
+
 	index_step[0]=index_versions[config_version][0];
 	index_step[1]=index_versions[config_version][1];
 	fskOut=senoidal;
-	PITInit(PIT_0, PIT_NS2TICK(19530), &fskModulate);
 	counter=MSGLEN+1;
+
+	PITInit(PIT_0, PIT_NS2TICK(19530), &fskModulate);
 	PITStart(PIT_0);
 	return (uint16_t**)&fskOut;
 }
 
 void fskSetMsg(uint16_t word)
 {
-
-	for (uint8_t i=0; i<MSGBITS; i++){
-		uint16_t aux= word>>(MSGBITS-1-i);
-		msg[i]= aux & 0x0001;
-	}
-
-	counter=0;
+	CBputByte16(fskInBuffer, word);
 }
 
 void fskModulate(void)
 {
         static uint8_t fsk_index, step;
+        static uint16_t word;
 
         if(counter<MSGLEN){				// Enviando palabra
 			if(counter%42==0){			// Pasamos de un bit al otro
@@ -72,8 +71,21 @@ void fskModulate(void)
 			fsk_index+=step;
         }
 
-        else{							// Enviando IDLE
-        	fskOut = &(senoidal[fsk_index]);
-			fsk_index += index_step[IDLE];	//Salamos de a paso constante
+        else{
+        	if(!CBisEmpty16(fskInBuffer))	// Proceso la sgte palabra
+        	{
+        		word= CBgetByte16(fskInBuffer);
+        		for (uint8_t i=0; i<MSGBITS; i++){
+        			msg[i]= (word>>(MSGBITS-1-i)) & 0x0001;
+        		}
+
+        		counter=0;
+        	}
+        	else{
+											// Enviando IDLE
+				fskOut = &(senoidal[fsk_index]);
+				fsk_index += index_step[IDLE];	//Salamos de a paso constante
+
+        	}
         }
 }
