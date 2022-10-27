@@ -74,7 +74,8 @@ void CMP_Init (CMP_n cmp_n, HYST_LEVEL hyst_level, INVERT polarity){ //Number of
 
 	SIM->SCGC4 |=SIM_SCGC4_CMP_MASK;
 
-	cmp->CR0 = CMP_CR0_HYSTCTR(hyst_level);
+	cmp->CR0 = CMP_CR0_HYSTCTR(hyst_level) | CMP_CR0_FILTER_CNT_MASK;
+//	cmp->CR0 = CMP_CR0_HYSTCTR(hyst_level);
 	cmp->CR1 = CMP_CR1_INV(polarity) | CMP_CR1_OPE_MASK;
 
 	portPtr[PIN2PORT(CMP_in_pins[cmp_n])]->PCR[PIN2NUM(CMP_in_pins[cmp_n])]=PORT_PCR_MUX(0x00); //In
