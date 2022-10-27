@@ -206,6 +206,9 @@ void ICInit(FTM_MODULE ftm, FTM_CHANNEL channel, IC_CAPTURE_EDGE edge, callbackI
 		pFTM->MOD = FTM_MOD_MOD_MASK;	// Free running clock
 		pFTM->CONF = 0x00;
 
+		// Filter enable
+		pFTM->FILTER = FTM_FILTER_CH0FVAL_MASK;
+
 		// Set channel to input capture and enable channel interrupts
 		pFTM->QDCTRL = 0x00;
 		pFTM->COMBINE = 0x00;		// TODO: Chequear canal
@@ -223,8 +226,6 @@ void ICInit(FTM_MODULE ftm, FTM_CHANNEL channel, IC_CAPTURE_EDGE edge, callbackI
 		}
 
 
-		// Filter enable
-		//TODO
 
 		// Set callback
 		ICCbPtrs[ftm][channel] = edgeCb;
