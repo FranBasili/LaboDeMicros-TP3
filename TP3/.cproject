@@ -271,9 +271,13 @@
 							</tool>
 						</toolChain>
 					</folderInfo>
+					<fileInfo id="com.crt.advproject.config.exe.debug.1284265667.607944607" name="fskModulatorTest.c" rcbsApplicability="disable" resourcePath="source/fskModulator/fskModulatorTest.c" toolsToInvoke="com.crt.advproject.gcc.exe.debug.1546198014.1955279625">
+						<tool id="com.crt.advproject.gcc.exe.debug.1546198014.1955279625" name="MCU C Compiler" superClass="com.crt.advproject.gcc.exe.debug.1546198014"/>
+					</fileInfo>
+					<fileInfo id="com.crt.advproject.config.exe.debug.1284265667.1194697540" name="DMA.h" rcbsApplicability="disable" resourcePath="source/DMA/DMA.h" toolsToInvoke=""/>
 					<sourceEntries>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="SDK"/>
-						<entry excluding="UART/SENS_UART_TEST.c|CAN/CANTest.c|buffer/generic_circular_buffer.c|SPI/SPITest.c|SENS_UART_TEST.c|UART/uartTest.c|SPI/App.c|I2Cm/I2C_Test.c|I2C_TEST.c" flags="LOCAL|VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="source"/>
+						<entry excluding="fskModulator/fskModulatorTest.c|ADC/ADC_test.c|FTM/FTMTest.c|char2uart/char2uart_test.c|CMP/CMP_IC_Test.c|CMP/CMP_test.c|PIT/PITTest.c|DAC/DAC_test.c|DMA/DMA.h|DMA/DMA.c|App.c|AppVer1.c|test.c|UART/SENS_UART_TEST.c|CAN/CANTest.c|buffer/generic_circular_buffer.c|SPI/SPITest.c|SENS_UART_TEST.c|UART/uartTest.c|SPI/App.c|I2Cm/I2C_Test.c|I2C_TEST.c" flags="LOCAL|VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="source"/>
 					</sourceEntries>
 				</configuration>
 			</storageModule>

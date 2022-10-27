@@ -68,11 +68,15 @@ void initDSP_FSK_2_UART(void){
 }
 
 
-BitStruct pushSample(double newSample){
+BitStruct pushSample(uint16_t newSample){ 
+
+	int32_t newSampleWithoutOffset = (int32_t)(newSample);
+
+	newSampleWithoutOffset -= 2048; 
 
 	double oldSample = FSK_readNlastSample(samplesBufferRealSize);
-	double product = newSample * oldSample;
-	FSK_pushSample(newSample);
+	double product = ((double)newSampleWithoutOffset) * oldSample;
+	FSK_pushSample(newSampleWithoutOffset);
 
 	FIR_pushSample(&fir, product);
 
@@ -87,7 +91,7 @@ BitStruct pushSample(double newSample){
 	switch(state){
 	case TRANSIENT_SUPRESS:
 		transientSamples++;
-		if(transientSamples >= AMOUNT_OF_TRANSIENTS_SAMPLES){
+		if(transientSamples >= AMOUNT_OF_TRANSIENTS_SAMPLES && filterOut < 0){
 			state = IDDLE;
 		}
 		break;
