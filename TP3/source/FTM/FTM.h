@@ -77,7 +77,13 @@ void PWMInit(FTM_MODULE ftm, FTM_CHANNEL channel, uint32_t freq);
 void PWMStart(FTM_MODULE ftm, FTM_CHANNEL channel, double duty);
 
 
-void PWMFromPtr(void* ptr);
+/**
+ * @brief Recibe el duty a traves de un doble puntero
+ * @param ftm: módulo FTM
+ * @param channel: Canal del modulo FTM
+ * @param ptr: direccion del puntero que apuntaa al duty actual. (12 bits). NULL para desactivar
+*/
+void PWMFromPtr(FTM_MODULE ftm, FTM_CHANNEL channel, uint16_t** ptr);
 
 
 ////// Input Capture //////

@@ -28,6 +28,8 @@
 
 #define FTM_CnSC_EDGE(x)	(((uint32_t)(((uint32_t)(x)) << FTM_CnSC_ELSA_SHIFT)) & (FTM_CnSC_ELSB_MASK | FTM_CnSC_ELSA_MASK))
 
+#define U12_MAX_VAL		0xFFF
+
 /*******************************************************************************
  * ENUMERATIONS AND STRUCTURES AND TYPEDEFS
  ******************************************************************************/
@@ -85,6 +87,9 @@ static const uint8_t FTMPinMuxAlt[][FTM_CH_COUNT] =	{	{	4,	4,	4,	4,	4,	4,	4,	4,	
 /*******************************************************************************
  * STATIC VARIABLES AND CONST VARIABLES WITH FILE LEVEL SCOPE
  ******************************************************************************/
+
+static uint16_t** PWMPtrs[FTM_COUNT][FTM_CH_COUNT];
+
 
 static callbackICEdge* ICCbPtrs[FTM_COUNT][FTM_CH_COUNT];
 static uint32_t ICTOFCont[FTM_COUNT][FTM_CH_COUNT];
@@ -157,6 +162,23 @@ void PWMStart(FTM_MODULE ftm, FTM_CHANNEL channel, double duty) {
 	pFTM->CONTROLS[channel].CnV = duty*(pFTM->MOD & FTM_MOD_MOD_MASK);
 }
 
+/**
+ * @brief Recibe el duty a traves de un doble puntero
+ * @param ftm: módulo FTM
+ * @param channel: Canal del modulo FTM
+ * @param ptr: direccion del puntero que apuntaa al duty actual. (12 bits). NULL para desactivar
+*/
+void PWMFromPtr(FTM_MODULE ftm, FTM_CHANNEL channel, uint16_t** ptr) {
+
+	PWMPtrs[ftm][channel] = ptr;
+
+//	FTMPtrs[ftm]->CONTROLS.CnSC |= FTM_CnSC_CHIE_MASK;
+
+	FTMPtrs[ftm]->SC |= FTM_SC_TOIE_MASK;
+
+	NVIC_EnableIRQ(FTMIRQs[ftm]);
+}
+
 
 ////// Input Capture //////
 
@@ -189,11 +211,16 @@ void ICInit(FTM_MODULE ftm, FTM_CHANNEL channel, IC_CAPTURE_EDGE edge, callbackI
 		pFTM->COMBINE = 0x00;		// TODO: Chequear canal
 		pFTM->CONTROLS[channel].CnSC = FTM_CnSC_EDGE(edge) | FTM_CnSC_CHIE_MASK;
 
-		// Pin configuration
-//		portPtr[FTMPinPort[ftm][channel]]->PCR[FTMPinNum[ftm][channel]] = PORT_PCR_MUX(FTMPinMuxAlt[ftm][channel]);
-		// Input from CMP
-		// TODO
-		SIM->SOPT4 = SIM_SOPT4_FTM1CH0SRC(0x01);
+		if (ftm == FTM_1 && channel == 0) {
+			SIM->SOPT4 = SIM_SOPT4_FTM1CH0SRC(0x01);	// Input from CMP_0
+		}
+		else if (ftm == FTM_2 && channel == 0) {
+			SIM->SOPT4 = SIM_SOPT4_FTM2CH0SRC(0x01);	// Input from CMP_0
+		}
+		else {
+			// Pin configuration
+			portPtr[FTMPinPort[ftm][channel]]->PCR[FTMPinNum[ftm][channel]] = PORT_PCR_MUX(FTMPinMuxAlt[ftm][channel]);
+		}
 
 
 		// Filter enable
@@ -277,6 +304,9 @@ void FTM_IRQHandler(FTM_MODULE ftm) {
 		uint32_t* pTOF = ICTOFCont[ftm];
 		for (uint8_t i = 0; i < FTM_CH_COUNT; i++) {
 			(*pTOF++)++;	// Increment all channel counters
+			if (PWMPtrs[ftm][i] != NULL) {
+				pFTM->CONTROLS[i].CnV = (double)(**PWMPtrs[ftm][i])/U12_MAX_VAL*(pFTM->MOD & FTM_MOD_MOD_MASK);
+			}
 		}
 	}
 
