@@ -50,7 +50,8 @@ void App_Run (void)
 		while(isNewByte(&parser)){
 			ByteStruct By = getByte(&parser);
 			//printf("%c ", By.byte);
-            uartWriteMsg(UART_ID, By.byte, 1);
+            uartWriteMsg(UART_ID, (char*)&By.byte, 1);
 		}
+    }
 
 }

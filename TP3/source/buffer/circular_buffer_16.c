@@ -61,7 +61,7 @@ const uint16_t * CBgetData(circularBuffer16 * CB, uint16_t bytesLen){
 }
 */
 void CBreset16(circularBuffer16 * CB){
-	for (uint16_t i= 0; i < BUFFER_SIZE; ++i){
+	for (uint16_t i= 0; i < BUFFER_SIZE_16; ++i){
 		CB->buffer[i] = 0;
 	}
 	CB->tail = 0;

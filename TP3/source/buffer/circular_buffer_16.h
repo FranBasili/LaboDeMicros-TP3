@@ -15,14 +15,14 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#define BUFFER_SIZE 200  // 12 bytes buffer size JUST 11 bytes can be used for store data without deleting older bytes
+#define BUFFER_SIZE_16 200  // 12 bytes buffer size JUST 11 bytes can be used for store data without deleting older bytes
 
 /*******************************************************************************
  * ENUMERATIONS AND STRUCTURES AND TYPEDEFS
  ******************************************************************************/
 
 typedef struct{
-	uint16_t buffer[BUFFER_SIZE];
+	uint16_t buffer[BUFFER_SIZE_16];
 
 	//private
 	uint16_t head;
