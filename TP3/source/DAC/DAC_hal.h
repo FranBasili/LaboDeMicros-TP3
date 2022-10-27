@@ -42,7 +42,9 @@
  * @param frec sample frecuency DAC in KHz
  * buff buffer to read data
 */
-void DACh_Init (uint16_t frec, circularBuffer16 * buff);
+
+void DACh_Init (void);
+void setDataDAC (uint16_t ** fskptr);
 
 /**
  * @brief set data of DAC

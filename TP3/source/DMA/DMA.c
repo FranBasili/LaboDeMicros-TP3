@@ -10,15 +10,19 @@
 #include "hardware.h"
 #include "PIT/PIT.h"
 #include "DMA.h"
+#include <stdio.h>
 /*******************************************************************************
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
  ******************************************************************************/
 
+static uint16_t ** PPglobal;
+
 void initDMA(uint16_t * DACptr, uint16_t **PP)
 {
 
-	PITInit(PIT_0, PIT_MS2TICK(100), NULL);
-	PITStart(PIT_0);
+	//PITInit(PIT_0, PIT_MS2TICK(100), NULL);
+	//PITStart(PIT_0);
+	PPglobal = PP;
 
 	/* Enable the clock for the PORT C*/
 	SIM->SCGC5 |= SIM_SCGC5_PORTC_MASK;
@@ -38,8 +42,8 @@ void initDMA(uint16_t * DACptr, uint16_t **PP)
 	/// ============= INIT TCD0 ===================//
 	/* Set memory address for source and destination. */
 
-	DMA0->TCD[0].SADDR= (uint32_t)(*PP);
-	DMA0->TCD[0].DADDR = (uint32_t)(&DAC);
+	DMA0->TCD[0].SADDR= (uint32_t)(*PPglobal);
+	DMA0->TCD[0].DADDR = (uint32_t)(DACptr);
 
 		/* Set an offset for source and destination address. */
 	DMA0->TCD[0].SOFF =0x01; // Source address offset of 2 bytes per transaction.
@@ -74,13 +78,7 @@ __ISR__ DMA0_IRQHandler(void)
 	/* Clear the interrupt flag. */
 	DMA0->CINT |= 0;
 
-
-	casa++;
-	if(casa > 8)
-		casa = 0;
-	Z = &sourceBuffer[casa];
-	DMA0->TCD[0].SADDR= (uint32_t)(*ZZ);
-	DMA0->TCD[0].DADDR = (uint32_t)(&DAC);
+	DMA0->TCD[0].SADDR= (uint32_t)(*PPglobal);
 
 }
 

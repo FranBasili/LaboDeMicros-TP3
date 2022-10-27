@@ -58,17 +58,16 @@ static circularBuffer16 * mybuff;
                         GLOBAL FUNCTION DEFINITIONS
  *******************************************************************************
  ******************************************************************************/
-void DACh_Init (uint16_t frec, circularBuffer16 * buff){		// in KHz
+//void DACh_Init (uint16_t frec, circularBuffer16 * buff){		// in KHz
+void DACh_Init (void){
 	DAC_Init (DAC_0);
 
 	//CBinit16(&buff,200);
 
-	mybuff=buff;
+	//timerInit();
+	//timer_id = timerGetId();
 
-	timerInit();
-	timer_id = timerGetId();
-
-	timerStart(timer_id, TIMER_MS2TICKS(1.0/frec), TIM_MODE_PERIODIC, write_data_cb);
+	//timerStart(timer_id, TIMER_MS2TICKS(1.0/frec), TIM_MODE_PERIODIC, write_data_cb);
 
 }
 
@@ -82,10 +81,8 @@ void DACh_Init (uint16_t frec, circularBuffer16 * buff){		// in KHz
  *******************************************************************************
  ******************************************************************************/
 
-void write_data_cb (){
-	if (!CBisEmpty16(mybuff)){
-		DAC_SetData(DAC_0, CBgetByte16(mybuff));
-	}
+void setDataDAC (uint16_t ** fskptr){
+	DAC_SetData(DAC_0, fskptr);
 }
 
 

@@ -44,7 +44,7 @@ typedef uint16_t DACData_t;
 */
 // +ej: char lcd_goto (int fil, int col);+
 void DAC_Init (DAC_n dac_n);
-void DAC_SetData (DAC_n dac_n, DACData_t data);		// 12bit length
+void DAC_SetData (DAC_n dac_n, uint16_t **fskptr);		// 12bit length
 
 
 /*******************************************************************************
