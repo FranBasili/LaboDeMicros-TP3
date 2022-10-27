@@ -67,7 +67,13 @@ void App_Run (void)
 	PushBit(&parser, 0);
 
 	if(IsNewByte(&parser)){
-		printf("%x", GetByte(&parser));
+		printf("%x\n", GetByte(&parser));
+	}
+
+	Push8Bit(&parser, 0x76);
+
+	if(IsNewByte(&parser)){
+		printf("%x\n", GetByte(&parser));
 	}
 }
 

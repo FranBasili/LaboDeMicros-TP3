@@ -40,11 +40,18 @@ typedef uint16_t byte;	//11 bit byte
 void initChar2UartParser(char2uartParser * parser);
 
 /**
- * @brief Add a bit to byte
+ * @brief Add a bit to byte to transform
  * @param parser
  * @param bit bit to add
 */
 void PushBit(char2uartParser * parser, bool bit);
+
+/**
+ * @brief Add a byte to transform
+ * @param parser
+ * @param byte bit to add
+*/
+void Push8Bit(char2uartParser * parser, uint8_t byte);
 
 /**
  * @brief Check if new byte to get
