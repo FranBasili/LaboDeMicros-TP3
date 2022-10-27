@@ -26,8 +26,8 @@
 
 #define UART_ID 0
 #define UART_BAUDRATE	1200
-// #define UART_PARITY		ODD_PARITY
-#define UART_PARITY		NO_PARITY
+#define UART_PARITY		ODD_PARITY
+//#define UART_PARITY		NO_PARITY
 
 #define FTM_MOD FTM_1
 #define FTM_CH  0
@@ -37,7 +37,7 @@
 
 #define PER1  833 //μseg
 #define PER0  417 //μseg
-#define TOL   50  //μseg
+#define TOL   120  //μseg
 
 #define START_BIT 0
 #define STOP_BIT  1
