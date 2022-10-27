@@ -42,16 +42,17 @@ uint16_t** fskModulatorInit(uint8_t config_version)
 	index_step[1]=index_versions[config_version][1];
 	fskOut=senoidal;
 	PITInit(PIT_0, PIT_NS2TICK(19530), &fskModulate);
+	counter=100;
 	PITStart(PIT_0);
 	return &fskOut;
 }
 
-void fskSetMsg(uint8_t word)
+void fskSetMsg(uint16_t word)
 {
-	static uint8_t running=0;
 
 	for (uint8_t i=0; i<MSGBITS; i++){
-		msg[i]= (word>>i) & 1;
+		uint16_t aux= word>>(MSGBITS-1-i);
+		msg[i]= aux & 0x0001;
 	}
 	counter=0;
 }

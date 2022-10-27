@@ -12,6 +12,7 @@
 #include "FTM/FTM.h"
 #include "CMP/CMP.h"
 #include "uart2char/uart2char.h"
+#include "char2uart/char2uart.h"
 #include "fskModulator/fskModulator.h"
 #include <stddef.h>
 #include <stdio.h>
@@ -25,7 +26,8 @@
 
 #define UART_ID 0
 #define UART_BAUDRATE	1200
-#define UART_PARITY		ODD_PARITY
+// #define UART_PARITY		ODD_PARITY
+#define UART_PARITY		NO_PARITY
 
 #define FTM_MOD FTM_1
 #define FTM_CH  0
@@ -65,6 +67,7 @@ bool isNewBit(bool* bit);
  ******************************************************************************/
 
 static uart2charParser uartParser;
+static char2uartParser uartParserRx;
 static uint16_t** fskPtr;
 
 /*******************************************************************************
@@ -80,6 +83,7 @@ void App_Init (void)
 	uart_cfg_t config = {.baudrate=UART_BAUDRATE, .MSBF=false, .parity=UART_PARITY};
 	uartInit(UART_ID, config);
 	initUart2charParser(&uartParser);
+	initChar2UartParser(&uartParserRx);
 
 	CMP_Init(CMP0_t, level_3, no_inv);
 	
@@ -100,7 +104,18 @@ void App_Run (void)
 	if (uartIsRxMsg(UART_ID)) {   // Recibo por UART
 		uint8_t data;
 		uartReadMsg(UART_ID, (char*)&data, 1);
-		fskSetMsg(data);
+		if(data!=0x0A){
+			//uartWriteMsg(UART_ID, (char*)&data, 1);
+
+			Push8Bit(&uartParserRx, data);
+			if(IsNewByte(&uartParserRx)){
+				uint16_t dataaux;
+				//uartWriteMsg(UART_ID, (char*)&data, 1)
+				dataaux=GetByte(&uartParserRx);
+				fskSetMsg(dataaux);
+			}
+			//fskSetMsg(data);
+		}
 	}
 
 	if (byteDecoder(&byte)) {

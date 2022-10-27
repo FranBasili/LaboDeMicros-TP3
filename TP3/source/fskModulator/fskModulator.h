@@ -18,7 +18,7 @@
 #define SINSAMPLES  256
 #define SINFREC     200
 #define DACFREQ     (SINFREC*SINSAMPLES)
-#define MSGBITS     11
+#define MSGBITS     10
 #define LENPERBIT   42
 #define MSGLEN      (MSGBITS*LENPERBIT)
 
@@ -48,7 +48,7 @@ uint16_t** fskModulatorInit(uint8_t config_version);
  * @brief Setea la nueva palabra a mandar
  * @param word: uint8_t a transmitir
 */
-void fskSetMsg(uint8_t word);
+void fskSetMsg(uint16_t word);
 
 /*******************************************************************************
  ******************************************************************************/
