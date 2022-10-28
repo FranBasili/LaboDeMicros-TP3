@@ -1,6 +1,8 @@
 #include "fskModulator\fskModulator.h"
 #include "PIT\PIT.h"
 #include "../buffer/circular_buffer_16.h"
+#include "MK64F12.h"
+#include "hardware.h"
 
 const uint8_t index_versions[][2] = {{fH1 / SINFREC, fL1 / SINFREC}, {fH2 / SINFREC, fL2 / SINFREC}};
 static uint8_t index_step[2], msg[MSGBITS];
@@ -54,7 +56,11 @@ uint16_t** fskModulatorInit(uint8_t config_version)
 
 void fskSetMsg(uint16_t word)
 {
+	//PIT->CHANNEL[PIT_0].TCTRL &= ~PIT_TCTRL_TEN_MASK;
+	hw_DisableInterrupts();
 	CBputByte16(&fskInBuffer, word);
+	hw_EnableInterrupts();
+	//PIT->CHANNEL[PIT_0].TCTRL = PIT_TCTRL_TEN_MASK;
 }
 
 void fskModulate(void)
