@@ -11,6 +11,7 @@
 #include "UART/uart.h"
 #include "FTM/FTM.h"
 #include "CMP/CMP.h"
+#include "timer/timer.h"
 #include "uart2char/uart2char.h"
 #include "char2uart/char2uart.h"
 #include "fskModulator/fskModulator.h"
@@ -25,9 +26,9 @@
 
 
 #define UART_ID 0
-#define UART_BAUDRATE	250000
-//#define UART_PARITY		ODD_PARITY
-#define UART_PARITY		NO_PARITY
+#define UART_BAUDRATE	1200
+#define UART_PARITY		ODD_PARITY
+//#define UART_PARITY		NO_PARITY
 
 #define FTM_MOD FTM_1
 #define FTM_CH  0
@@ -36,8 +37,9 @@
 #define PWM_CH  2
 
 #define PER1  833 //μseg
-#define PER0  417 //μseg
-#define TOL   200  //μseg
+#define PER0  (PER1/2) //μseg
+#define TOL   (PER0/2)  //μseg
+#define UMBRAL   625  //μseg
 
 #define START_BIT 0
 #define STOP_BIT  1
@@ -70,6 +72,7 @@ static uart2charParser uartParser;
 static char2uartParser uartParserRx;
 static uint16_t** fskPtr;
 
+static tim_id_t timer;
 /*******************************************************************************
  *******************************************************************************
                         GLOBAL FUNCTION DEFINITIONS
@@ -94,6 +97,10 @@ void App_Init (void)
 	PWMInit(PWM_MOD, PWM_CH, DACFREQ);
 	PWMFromPtr(PWM_MOD, PWM_CH, fskPtr);
 
+//	timerInit();
+//	timer = timerGetId();
+//	timerStart(timer, TIMER_MS2TICKS(0.100), TIM_MODE_PERIODIC, NULL);
+
 }
 
 /* Función que se llama constantemente en un ciclo infinito */
@@ -104,21 +111,21 @@ void App_Run (void)
 	if (uartIsRxMsg(UART_ID)) {   // Recibo por UART
 		uint8_t data;
 		uartReadMsg(UART_ID, (char*)&data, 1);
-		if(data!=0x0A){
+//		if(data!=0x0A){
 			Push8Bit(&uartParserRx, data);
 			if(IsNewByte(&uartParserRx)){
 				uint16_t dataaux;
 				dataaux=GetByte(&uartParserRx);
 				fskSetMsg(dataaux);
 			}
-		}
+//		}
 	}
 
 	if (byteDecoder(&byte)) {
-  	  char msg[50];
-  	  uint8_t cant = sprintf(msg, ": %X\r\n", byte);
-  	  uartWriteMsg(UART_ID, msg, cant);
-//		uartWriteMsg(UART_ID, (char*)&byte, 1);
+//  	  char msg[50];
+//  	  uint8_t cant = sprintf(msg, ": %X\r\n", byte);
+//  	  uartWriteMsg(UART_ID, msg, cant);
+		uartWriteMsg(UART_ID, (char*)&byte, 1);
 	}
 
 }
@@ -186,26 +193,29 @@ bool isNewBit(bool* bit){
 //        	  uint8_t cant = sprintf(msg, "%u\r\n", period);
 //        	  uartWriteMsg(UART_ID, msg, cant);
 
-		if (period < PER1+TOL && period > PER1-TOL) {        // 1
-			if(counter==0){
-			  uartWriteMsg(UART_ID, "1", 1);
-			  *bit=1;
+
+		if (period < UMBRAL) {    // 0
+			counter++;
+			if (counter==1) {
+			  *bit=0;
 			  return true;
 			}
 			else {
-				counter = 0;
-			}
+			counter = 0;
+		  }
+
+//			  uartWriteMsg(UART_ID, "0", 1);
+
 		}
-		else if (period < PER0+TOL && period > PER0-TOL) {    // 0
-			counter++;
-			if (counter==2) {
-			  *bit=0;
-			  counter=0;
-
-			  uartWriteMsg(UART_ID, "0", 1);
-
+		else {        // 1
+			counter=0;
+//			  uartWriteMsg(UART_ID, "1", 1);
+			  *bit=1;
 			  return true;
-			}
+//			}
+//			else {
+//				counter = 0;
+//			}
 		}
   }
 

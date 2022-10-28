@@ -261,7 +261,7 @@ void ICInit(FTM_MODULE ftm, FTM_CHANNEL channel, IC_CAPTURE_EDGE edge, callbackI
 		ICLastTicks[ftm][channel] = 0;
 
 		// Set clock source and enable TOF interrupt
-		FTMPtrs[ftm]->SC = FTM_SC_CLKS(0x01) | FTM_SC_PS(0x00) | FTM_SC_TOIE_MASK;		// Start clock
+		FTMPtrs[ftm]->SC = FTM_SC_CLKS(0x01) | FTM_SC_PS(0x00);// | FTM_SC_TOIE_MASK;		// Start clock
 
 		NVIC_EnableIRQ(FTMIRQs[ftm]);
 
@@ -322,15 +322,15 @@ void ICReset(FTM_MODULE ftm, FTM_CHANNEL channel) {
  ******************************************************************************/
 
 void FTM_IRQHandler(FTM_MODULE ftm) {
-	gpioWrite(PORTNUM2PIN(PB, 9), HIGH);
+//	gpioWrite(PORTNUM2PIN(PB, 9), HIGH);
 	FTM_Type* const pFTM = FTMPtrs[ftm];
 	uint8_t status = pFTM->STATUS;
 
 	if (pFTM->SC & FTM_SC_TOF_MASK) {	// Overflow
 		pFTM->SC &= ~FTM_SC_TOF_MASK;
-		uint32_t* pTOF = ICTOFCont[ftm];
+//		uint32_t* pTOF = ICTOFCont[ftm];
 		for (uint8_t i = 0; i < FTM_CH_COUNT; i++) {
-			(*pTOF++)++;	// Increment all channel counters
+//			(*pTOF++)++;	// Increment all channel counters
 			if (PWMPtrs[ftm][i] != NULL) {
 				pFTM->CONTROLS[i].CnV = (double)(**PWMPtrs[ftm][i])/U12_MAX_VAL*(pFTM->MOD & FTM_MOD_MOD_MASK);
 			}
@@ -342,7 +342,8 @@ void FTM_IRQHandler(FTM_MODULE ftm) {
 			uint8_t i = FTMICList[ftm][j];
 			if (status & (1UL << i)) {
 				// Calculate ticks diff
-				ICLastTicks[ftm][i] = pFTM->CONTROLS[i].CnV - ICChannelValue[ftm][i] + ICTOFCont[ftm][i]*(FTM_MAX_VAL+1);
+				ICLastTicks[ftm][i] = (pFTM->CONTROLS[i].CnV - ICChannelValue[ftm][i] + (FTM_MAX_VAL+1) ) % (FTM_MAX_VAL+1);
+//				ICLastTicks[ftm][i] = pFTM->CONTROLS[i].CnV - ICChannelValue[ftm][i] + ICTOFCont[ftm][i]*(FTM_MAX_VAL+1);
 				// Save new value
 				ICChannelValue[ftm][i] = pFTM->CONTROLS[i].CnV;
 
@@ -375,23 +376,49 @@ void FTM_IRQHandler(FTM_MODULE ftm) {
 //		}
 //		pFTM->STATUS = 0x00;	// Clear all flags
 	}
-	gpioWrite(PORTNUM2PIN(PB, 9), LOW);
+//	gpioWrite(PORTNUM2PIN(PB, 9), LOW);
 
 }
 
 
 __ISR__ FTM0_IRQHandler () {
-	FTM_IRQHandler(FTM_0);
+//	FTM_IRQHandler(FTM_0);
+
+
+	if (FTM0->SC & FTM_SC_TOF_MASK) {	// Overflow
+		FTM0->SC &= ~FTM_SC_TOF_MASK;
+		FTM0->CONTROLS[2].CnV = (uintmax_t)(**PWMPtrs[0][2])*(FTM0->MOD & FTM_MOD_MOD_MASK)/U12_MAX_VAL;
+	}
+
+
+
 }
 
 __ISR__ FTM1_IRQHandler () {
-	FTM_IRQHandler(FTM_1);
+
+	uint8_t status = FTM1->STATUS;
+	if (status & FTM_STATUS_CH0F_MASK) {		// Channel Event
+
+		ICLastTicks[1][0] = (FTM1->CONTROLS[0].CnV - ICChannelValue[1][0] + (FTM_MAX_VAL+1) ) % (FTM_MAX_VAL+1);
+//				ICLastTicks[ftm][i] = pFTM->CONTROLS[i].CnV - ICChannelValue[ftm][i] + ICTOFCont[ftm][i]*(FTM_MAX_VAL+1);
+		// Save new value
+		ICChannelValue[1][0] = FTM1->CONTROLS[0].CnV;
+
+//		ICTOFCont[1][0] = 0;	// Reset TOF counter
+
+		// Exec callback
+		if (ICCbPtrs[1][0] != NULL) ICCbPtrs[1][0](ICLastTicks[1][0]);
+		else ICnewEdge[1][0] = true;
+//		}
+		FTM1->STATUS = 0x00;	// Clear all flags
+	}
+
 }
 
-__ISR__ FTM2_IRQHandler () {
-	FTM_IRQHandler(FTM_2);
-}
-
-__ISR__ FTM3_IRQHandler () {
-	FTM_IRQHandler(FTM_3);
-}
+//__ISR__ FTM2_IRQHandler () {
+//	FTM_IRQHandler(FTM_2);
+//}
+//
+//__ISR__ FTM3_IRQHandler () {
+//	FTM_IRQHandler(FTM_3);
+//}

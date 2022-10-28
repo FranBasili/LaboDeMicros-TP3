@@ -11,6 +11,7 @@
 #include "UART/uart.h"
 #include "FTM/FTM.h"
 #include "CMP/CMP.h"
+#include "timer/timer.h"
 #include "uart2char/uart2char.h"
 #include "char2uart/char2uart.h"
 #include "fskModulator/fskModulator.h"
@@ -55,6 +56,8 @@ bool byteDecoder(uint8_t* byte);
 
 bool isNewBit(bool* bit);
 
+void readEdge(FTM_tick_t ticks);
+
 /*******************************************************************************
  * ROM CONST VARIABLES WITH FILE LEVEL SCOPE
  ******************************************************************************/
@@ -69,6 +72,11 @@ bool isNewBit(bool* bit);
 static uart2charParser uartParser;
 static char2uartParser uartParserRx;
 static uint16_t** fskPtr;
+
+static tim_id_t timer;
+
+static bool newEdge = false;
+//static bool newBit;
 
 /*******************************************************************************
  *******************************************************************************
@@ -87,12 +95,16 @@ void App_Init (void)
 
 	CMP_Init(CMP0_t, level_3, no_inv);
 	
-	ICInit(FTM_MOD, FTM_CH, CAPTURE_RISING, NULL);
+	ICInit(FTM_MOD, FTM_CH, CAPTURE_RISING, readEdge);
 
 	fskPtr = fskModulatorInit(VERSION-1);
 	
 	PWMInit(PWM_MOD, PWM_CH, DACFREQ);
 	PWMFromPtr(PWM_MOD, PWM_CH, fskPtr);
+
+	timerInit();
+	timer = timerGetId();
+	timerStart(timer, TIMER_MS2TICKS(0.833), TIM_MODE_SINGLESHOT, NULL);
 
 }
 
@@ -129,6 +141,16 @@ void App_Run (void)
                         LOCAL FUNCTION DEFINITIONS
  *******************************************************************************
  ******************************************************************************/
+
+
+void readEdge(FTM_tick_t ticks) {
+
+	if (timerExpired(timer)) {
+		newEdge = true;
+		timerStart(timer, TIMER_MS2TICKS(0.833), TIM_MODE_SINGLESHOT, NULL);
+	}
+
+}
 
 bool byteDecoder(uint8_t* byte) {
   
@@ -179,33 +201,34 @@ bool isNewBit(bool* bit){
 
   static uint8_t counter=0;
 
-  if (ICisEdge(FTM_MOD, FTM_CH)) {
+  if (newEdge) {
+	  newEdge = false;
     uint16_t period = FTM_TICK2US(ICGetCont(FTM_MOD, FTM_CH));
 
 //        	  char msg[100];
 //        	  uint8_t cant = sprintf(msg, "%u\r\n", period);
 //        	  uartWriteMsg(UART_ID, msg, cant);
 
-		if (period < PER1+TOL && period > PER1-TOL) {        // 1
-			if(counter==0){
+		if (period < PER0+TOL) {    // 0
+//			counter++;
+			uartWriteMsg(UART_ID, "0", 1);
+//			if (counter==2) {
+			  *bit=0;
+//			  counter=0;
+
+
+			  return true;
+//			}
+		}
+		else { //(period < PER1+TOL && period > PER1-TOL) {        // 1
+//			if(counter==0){
 			  uartWriteMsg(UART_ID, "1", 1);
 			  *bit=1;
 			  return true;
-			}
-			else {
-				counter = 0;
-			}
-		}
-		else if (period < PER0+TOL && period > PER0-TOL) {    // 0
-			counter++;
-			if (counter==2) {
-			  *bit=0;
-			  counter=0;
-
-			  uartWriteMsg(UART_ID, "0", 1);
-
-			  return true;
-			}
+//			}
+//			else {
+//				counter = 0;
+//			}
 		}
   }
 

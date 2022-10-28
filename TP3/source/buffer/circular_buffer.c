@@ -5,6 +5,7 @@
  ******************************************************************************/
 
 #include "circular_buffer.h"
+#include "hardware.h"
 #include <stdint.h>
 #include <stdbool.h>
 
@@ -51,10 +52,17 @@ uint8_t CBgetByte(circularBuffer * CB){
 }
 
 uint8_t CBgetBufferState(circularBuffer * CB){
-	if(CB->head >= CB->tail)
-		return CB->head - CB->tail;
-	else
-		return CB->sizeInBytes - CB->tail + CB->head;
+	hw_DisableInterrupts();
+	if(CB->head >= CB->tail) {
+		uint8_t temp = CB->head - CB->tail;
+		hw_EnableInterrupts();
+		return temp;
+	}
+	else {
+		uint8_t temp = CB->sizeInBytes - CB->tail + CB->head;
+		hw_EnableInterrupts();
+		return temp;
+	}
 }
 /*
 const uint8_t * CBgetData(circularBuffer * CB, uint8_t bytesLen){

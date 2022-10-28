@@ -183,9 +183,11 @@ uint8_t uartReadMsg(uint8_t id, char* msg, uint8_t cant) {
 	
 	uint8_t i = 0;
 
+	hw_DisableInterrupts();
 	while (i++ < cant && CBgetBufferState(RxBuffer+id)) {
 		*(msg++) = CBgetByte(RxBuffer+id);			// Copy to msg
 	}
+	hw_EnableInterrupts();
 
 	return i-1;
 
@@ -201,7 +203,9 @@ uint8_t uartReadMsg(uint8_t id, char* msg, uint8_t cant) {
 */
 uint8_t uartWriteMsg(uint8_t id, const char* msg, uint8_t cant) {
 
+	hw_DisableInterrupts();
 	CBputChain(TxBuffer+id, msg, cant);
+	hw_EnableInterrupts();
 
 	// Enable Tx and their IRQs, this automatically starts sending data
 	UARTPorts[id]->C2 |= UART_C2_TE_MASK | UART_C2_TIE_MASK;
