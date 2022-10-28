@@ -48,9 +48,9 @@ static void write_data_cb ();
  * STATIC VARIABLES AND CONST VARIABLES WITH FILE LEVEL SCOPE
  ******************************************************************************/
 
-static tim_id_t timer_id;
-
-static circularBuffer16 * mybuff;
+//static tim_id_t timer_id;
+//
+//static circularBuffer16 * mybuff;
 
 
 /*******************************************************************************

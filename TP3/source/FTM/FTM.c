@@ -15,6 +15,9 @@
 #include "MCAL/gpio.h"
 #include <stdlib.h>
 
+#include "MCAL/gpio.h"
+#include "hardware.h"
+
 /*******************************************************************************
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
  ******************************************************************************/
@@ -98,6 +101,14 @@ static uint16_t ICChannelValue[FTM_COUNT][FTM_CH_COUNT];
 static FTM_tick_t ICLastTicks[FTM_COUNT][FTM_CH_COUNT];
 static bool ICnewEdge[FTM_COUNT][FTM_CH_COUNT];
 
+static bool FTMMode[FTM_COUNT];		// 0: PWM, 1: Input Capture
+
+static uint8_t FTMPWMPtrList[FTM_COUNT][FTM_CH_COUNT];
+static uint8_t FTMICList[FTM_COUNT][FTM_CH_COUNT];
+
+static uint8_t FTMPWMPtrLength[FTM_COUNT];
+static uint8_t FTMICLength[FTM_COUNT];
+
 /*******************************************************************************
  *******************************************************************************
                         GLOBAL FUNCTION DEFINITIONS
@@ -121,6 +132,11 @@ void FTMReset(FTM_MODULE ftm) {
  * @param freq: frecuencua del PWM (0 - MAX_FREQ)
 */
 void PWMInit(FTM_MODULE ftm, FTM_CHANNEL channel, uint32_t freq) {
+
+	gpioMode(PORTNUM2PIN(PB, 9), OUTPUT);
+	gpioWrite(PORTNUM2PIN(PB, 9), LOW);
+
+	FTMMode[ftm] = 0;
 
 	// Enable FTMx clock
 	*(FTMClkSimPtr[ftm]) |= FTMClkSimMask[ftm];
@@ -171,6 +187,8 @@ void PWMStart(FTM_MODULE ftm, FTM_CHANNEL channel, double duty) {
 void PWMFromPtr(FTM_MODULE ftm, FTM_CHANNEL channel, uint16_t** ptr) {
 
 	PWMPtrs[ftm][channel] = ptr;
+	FTMPWMPtrList[ftm][FTMPWMPtrLength[ftm]++] = channel;
+
 
 //	FTMPtrs[ftm]->CONTROLS.CnSC |= FTM_CnSC_CHIE_MASK;
 
@@ -191,6 +209,11 @@ void PWMFromPtr(FTM_MODULE ftm, FTM_CHANNEL channel, uint16_t** ptr) {
 */
 void ICInit(FTM_MODULE ftm, FTM_CHANNEL channel, IC_CAPTURE_EDGE edge, callbackICEdge edgeCb) {
 
+
+		FTMMode[ftm] = 1;
+
+
+
 	// Enable FTMx clock
 		*(FTMClkSimPtr[ftm]) |= FTMClkSimMask[ftm];
 
@@ -207,7 +230,7 @@ void ICInit(FTM_MODULE ftm, FTM_CHANNEL channel, IC_CAPTURE_EDGE edge, callbackI
 		pFTM->CONF = 0x00;
 
 		// Filter enable
-		pFTM->FILTER = FTM_FILTER_CH0FVAL_MASK;
+//		pFTM->FILTER = FTM_FILTER_CH0FVAL_MASK;
 
 		// Set channel to input capture and enable channel interrupts
 		pFTM->QDCTRL = 0x00;
@@ -229,6 +252,8 @@ void ICInit(FTM_MODULE ftm, FTM_CHANNEL channel, IC_CAPTURE_EDGE edge, callbackI
 
 		// Set callback
 		ICCbPtrs[ftm][channel] = edgeCb;
+
+		FTMICList[ftm][FTMICLength[ftm]++] = channel;
 
 		// Reset counters
 		ICTOFCont[ftm][channel] = 0;
@@ -297,6 +322,7 @@ void ICReset(FTM_MODULE ftm, FTM_CHANNEL channel) {
  ******************************************************************************/
 
 void FTM_IRQHandler(FTM_MODULE ftm) {
+	gpioWrite(PORTNUM2PIN(PB, 9), HIGH);
 	FTM_Type* const pFTM = FTMPtrs[ftm];
 	uint8_t status = pFTM->STATUS;
 
@@ -311,10 +337,10 @@ void FTM_IRQHandler(FTM_MODULE ftm) {
 		}
 	}
 
-	if (status) {		// Channel Event
-		for (uint8_t i = 0; i < FTM_CH_COUNT; i++) {
+	if (status && FTMMode[ftm] == 1) {		// Channel Event
+		for (uint8_t j = 0; j < FTMICLength[ftm]; j++) {
+			uint8_t i = FTMICList[ftm][j];
 			if (status & (1UL << i)) {
-//				pFTM->STATUS &= ~(1UL << i);	// Write 0 to clear flag
 				// Calculate ticks diff
 				ICLastTicks[ftm][i] = pFTM->CONTROLS[i].CnV - ICChannelValue[ftm][i] + ICTOFCont[ftm][i]*(FTM_MAX_VAL+1);
 				// Save new value
@@ -328,7 +354,28 @@ void FTM_IRQHandler(FTM_MODULE ftm) {
 			}
 		}
 		pFTM->STATUS = 0x00;	// Clear all flags
+
+
+
+
+//		for (uint8_t i = 0; i < FTM_CH_COUNT; i++) {
+//			if (status & (1UL << i)) {
+////				pFTM->STATUS &= ~(1UL << i);	// Write 0 to clear flag
+//				// Calculate ticks diff
+//				ICLastTicks[ftm][i] = pFTM->CONTROLS[i].CnV - ICChannelValue[ftm][i] + ICTOFCont[ftm][i]*(FTM_MAX_VAL+1);
+//				// Save new value
+//				ICChannelValue[ftm][i] = pFTM->CONTROLS[i].CnV;
+//
+//				ICTOFCont[ftm][i] = 0;	// Reset TOF counter
+//
+//				// Exec callback
+//				if (ICCbPtrs[ftm][i] != NULL) ICCbPtrs[ftm][i](ICLastTicks[ftm][i]);
+//				else ICnewEdge[ftm][i] = true;
+//			}
+//		}
+//		pFTM->STATUS = 0x00;	// Clear all flags
 	}
+	gpioWrite(PORTNUM2PIN(PB, 9), LOW);
 
 }
 
