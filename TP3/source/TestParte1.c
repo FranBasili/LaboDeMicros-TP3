@@ -17,19 +17,33 @@
 #include "char2uart/char2uart.h"
 #include "DAC/DAC_hal.h"
 #include "fskModulator/fskModulator.h"
+
+#include "MCAL/gpio.h"
 /*******************************************************************************
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
  ******************************************************************************/
 static circularBuffer16 buffADC;
 #define UART_ID			0
-#define UART_BAUDRATE	115200
+#define UART_BAUDRATE	1200
 
 #define VERSION 1
 
 static char2uartParser uartParserRx;
 static uart2charParser parser;
+
+#define ENABLE_TP
+
+#ifdef ENABLE_TP
+#define TP_PIN	PORTNUM2PIN(PC, 9)
+#endif
+
 void App_Init (void)
 {
+	#ifdef ENABLE_TP
+		gpioMode(TP_PIN, OUTPUT);
+		gpioWrite(TP_PIN, LOW);
+	#endif
+
 	//=================modules======================
 	initDSP_FSK_2_UART();
 	initUart2charParser(&parser);
@@ -58,10 +72,16 @@ void App_Run (void)
 //=================Rx FSK - Tx UART=====================
 
 	while(!CBisEmpty16(&buffADC)){
+#ifdef ENABLE_TP
+	gpioWrite(TP_PIN, HIGH);
+#endif
 		BitStruct bs = pushSample(CBgetByte16(&buffADC));
 		if(bs.newBit == true){
 			pushBit(&parser, bs.bit);
 		}
+#ifdef ENABLE_TP
+	gpioWrite(TP_PIN, LOW);
+#endif
 	}
 	uint8_t i = 0;
 	while(isNewByte(&parser)){

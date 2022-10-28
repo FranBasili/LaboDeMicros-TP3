@@ -16,7 +16,7 @@
 #include "hardware.h"
 
 #include "timer/timer.h"
-
+#include "../MCAL/gpio.h"
 /*******************************************************************************
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
  ******************************************************************************/
@@ -57,6 +57,13 @@ static tim_id_t timer_id;
 
 static circularBuffer16 * mybuff;
 
+#define ENABLE_TP
+
+#ifdef ENABLE_TP
+#define TP_PIN	PORTNUM2PIN(PC, 1)
+#endif
+
+
 /*******************************************************************************
  *******************************************************************************
                         GLOBAL FUNCTION DEFINITIONS
@@ -64,6 +71,12 @@ static circularBuffer16 * mybuff;
  ******************************************************************************/
 
 void ADCh_Init (ADChClkDiv_t divider, circularBuffer16 * buff){
+
+	#ifdef ENABLE_TP
+		gpioMode(TP_PIN, OUTPUT);
+		gpioWrite(TP_PIN, LOW);
+	#endif
+
 	ADC_Init(ADC0_t, divider, ADC_b12 , ADC_c24);
 
 	//CBinit(&buff,200);
@@ -101,13 +114,18 @@ uint16_t get_ADCh(){
  *******************************************************************************
  ******************************************************************************/
 void add_buff_cb (){
-	
+
+	#ifdef ENABLE_TP
+		gpioWrite(TP_PIN, HIGH);
+	#endif
 	if (ADC_IsReady(ADC0_t)){
 		ADCData_t data =ADC_getData(ADC0_t);
 		CBputByte16(mybuff, data);
 	}
+	#ifdef ENABLE_TP
+		gpioWrite(TP_PIN, LOW);
+	#endif
 }
-
 
 
 

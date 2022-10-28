@@ -11,15 +11,28 @@
 #include "PIT/PIT.h"
 #include "DMA.h"
 #include <stdio.h>
+
+#include "../MCAL/gpio.h"
 /*******************************************************************************
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
  ******************************************************************************/
+
+#define ENABLE_TP
+
+#ifdef ENABLE_TP
+#define TP_PIN	PORTNUM2PIN(PB, 19)
+#endif
+
+
 
 static uint16_t ** PPglobal;
 
 void initDMA(uint16_t * DACptr, uint16_t **PP)
 {
-
+	#ifdef ENABLE_TP
+		gpioMode(TP_PIN, OUTPUT);
+		gpioWrite(TP_PIN, LOW);
+	#endif
 	//PITInit(PIT_0, PIT_MS2TICK(100), NULL);
 	//PITStart(PIT_0);
 	PPglobal = PP;
@@ -75,11 +88,18 @@ void initDMA(uint16_t * DACptr, uint16_t **PP)
 
 __ISR__ DMA0_IRQHandler(void)
 {
+	#ifdef ENABLE_TP
+		gpioWrite(TP_PIN, HIGH);
+	#endif
+
 	/* Clear the interrupt flag. */
 	DMA0->CINT |= 0;
 
 	DMA0->TCD[0].SADDR= (uint32_t)(*PPglobal);
 
+	#ifdef ENABLE_TP
+		gpioWrite(TP_PIN, LOW);
+	#endif
 }
 
 /* The red LED is toggled when an error occurs. */

@@ -14,6 +14,7 @@
 #include "hardware.h"
 #include <stddef.h>
 
+#include "../MCAL/gpio.h"
 /*******************************************************************************
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
  ******************************************************************************/
@@ -49,6 +50,12 @@ static const IRQn_Type PITIRQs[] = PIT_IRQS_2;
 
 static PITCallback_t PITCbs[PIT_COUNT];
 
+#define ENABLE_TP
+
+#ifdef ENABLE_TP
+#define TP_PIN	PORTNUM2PIN(PC, 8)
+#endif
+
 
 /*******************************************************************************
  *******************************************************************************
@@ -64,7 +71,10 @@ static PITCallback_t PITCbs[PIT_COUNT];
  * @param cb: NULL o callback a llamar en cada periodo
 */
 void PITInit(PIT_MOD pit, PITTick_t ticks, PITCallback_t cb) {
-
+	#ifdef ENABLE_TP
+		gpioMode(TP_PIN, OUTPUT);
+		gpioWrite(TP_PIN, LOW);
+	#endif
 	// Clock gating
 	SIM->SCGC6 |= SIM_SCGC6_PIT_MASK;
 
@@ -110,8 +120,16 @@ void PITStop(PIT_MOD pit) {
  ******************************************************************************/
 
 __ISR__ PIT0_IRQHandler() {
+	#ifdef ENABLE_TP
+		gpioWrite(TP_PIN, HIGH);
+	#endif
+
 	PIT->CHANNEL[0].TFLG = PIT_TFLG_TIF_MASK;		// Clear flag
 	PITCbs[0]();									// Callback()
+
+	#ifdef ENABLE_TP
+		gpioWrite(TP_PIN, LOW);
+	#endif
 }
 
 __ISR__ PIT1_IRQHandler() {

@@ -23,6 +23,7 @@ typedef enum {PIN_DISABLE, ALTERNATIVE_1, ALTERNATIVE_2, ALTERNATIVE_3, ALTERNAT
 typedef enum {OPEN_DRAIN, PUSH_PULL} pin_mode;
 
 
+
 /*******************************************************************************
  *******************************************************************************
                         GLOBAL FUNCTION DEFINITIONS
