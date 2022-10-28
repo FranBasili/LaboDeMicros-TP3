@@ -25,7 +25,7 @@
 
 
 #define UART_ID 0
-#define UART_BAUDRATE	1200
+#define UART_BAUDRATE	115200
 #define UART_PARITY		ODD_PARITY
 //#define UART_PARITY		NO_PARITY
 
@@ -115,7 +115,8 @@ void App_Run (void)
 	}
 
 	if (byteDecoder(&byte)) {
-		uartWriteMsg(UART_ID, (char*)&byte, 1);
+		//uartWriteMsg(UART_ID, (char*)&byte, 1);
+
 	}
 
 }
@@ -137,13 +138,17 @@ bool byteDecoder(uint8_t* byte) {
 
     case IDLE_STATE:
       if (isNewBit(&bit) && bit == START_BIT)  {    // START detected
-        state = DATA_STATE;
+    	  uartWriteMsg(UART_ID, "\r\n", 1);
+    	  state = DATA_STATE;
       }
       break;
 
     case DATA_STATE:
       if (isNewBit(&bit)) {
-        if (isNewByte(&uartParser)) {
+    	  char msg[100];
+    	  uint8_t cant = sprintf(msg, "%u", bit);
+    	  uartWriteMsg(UART_ID, msg, cant);
+    	  if (isNewByte(&uartParser)) {
           state = IDLE_STATE;
           if (bit == STOP_BIT) {    // STOP
             ByteStruct newByte = getByte(&uartParser);
