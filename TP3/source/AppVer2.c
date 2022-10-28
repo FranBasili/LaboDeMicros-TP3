@@ -72,7 +72,7 @@ static uart2charParser uartParser;
 static char2uartParser uartParserRx;
 static uint16_t** fskPtr;
 
-static tim_id_t timer;
+//static tim_id_t timer;
 /*******************************************************************************
  *******************************************************************************
                         GLOBAL FUNCTION DEFINITIONS

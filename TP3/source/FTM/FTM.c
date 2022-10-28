@@ -276,11 +276,14 @@ void ICInit(FTM_MODULE ftm, FTM_CHANNEL channel, IC_CAPTURE_EDGE edge, callbackI
 */
 FTM_tick_t ICGetCont(FTM_MODULE ftm, FTM_CHANNEL channel) {
 
+	hw_DisableInterrupts();
 	// TODO: Disable interrupts
 	ICnewEdge[ftm][channel] = 0;
 	// TODO: Enable interrupts
+	FTM_tick_t ticks = ICLastTicks[ftm][channel];
+	hw_EnableInterrupts();
 
-	return ICLastTicks[ftm][channel];
+	return ticks;
 
 }
 
@@ -292,10 +295,12 @@ FTM_tick_t ICGetCont(FTM_MODULE ftm, FTM_CHANNEL channel) {
 */
 bool ICisEdge(FTM_MODULE ftm, FTM_CHANNEL channel) {
 
+	hw_DisableInterrupts();
 	// TODO: Disable interrupts
 	bool new = ICnewEdge[ftm][channel];
 	if (new) ICnewEdge[ftm][channel] = 0;
 	// TODO: Enable interrupts
+	hw_EnableInterrupts();
 
 	return new;
 }
@@ -399,10 +404,12 @@ __ISR__ FTM1_IRQHandler () {
 	uint8_t status = FTM1->STATUS;
 	if (status & FTM_STATUS_CH0F_MASK) {		// Channel Event
 
-		ICLastTicks[1][0] = (FTM1->CONTROLS[0].CnV - ICChannelValue[1][0] + (FTM_MAX_VAL+1) ) % (FTM_MAX_VAL+1);
+		uint32_t cnv = FTM1->CONTROLS[0].CnV;
+
+		ICLastTicks[1][0] = ((FTM_MAX_VAL+1) + cnv - ICChannelValue[1][0] ) % (FTM_MAX_VAL+1);
 //				ICLastTicks[ftm][i] = pFTM->CONTROLS[i].CnV - ICChannelValue[ftm][i] + ICTOFCont[ftm][i]*(FTM_MAX_VAL+1);
 		// Save new value
-		ICChannelValue[1][0] = FTM1->CONTROLS[0].CnV;
+		ICChannelValue[1][0] = cnv;
 
 //		ICTOFCont[1][0] = 0;	// Reset TOF counter
 
