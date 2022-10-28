@@ -52,7 +52,7 @@ void App_Init (void)
 	//================= dac=========================
 	DACh_Init ();
     //================= uart =======================
-	uart_cfg_t cfg = {.MSBF = false, .baudrate = UART_BAUDRATE, .parity = NO_PARITY};
+	uart_cfg_t cfg = {.MSBF = false, .baudrate = UART_BAUDRATE, .parity = ODD_PARITY};
 	uartInit(UART_ID, cfg);
     //====================ADC==========================
     CBinit16(&buffADC, 199);
