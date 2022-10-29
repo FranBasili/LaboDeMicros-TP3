@@ -22,6 +22,9 @@
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
  ******************************************************************************/
 
+#define TEST_PIN	PORTNUM2PIN(PC, 16)
+
+
 #define FTM_CLK	50000000UL	// 50MHz Bus Clock
 
 #define FTM_MAX_VAL	0xFFFFUL
@@ -133,8 +136,8 @@ void FTMReset(FTM_MODULE ftm) {
 */
 void PWMInit(FTM_MODULE ftm, FTM_CHANNEL channel, uint32_t freq) {
 
-	gpioMode(PORTNUM2PIN(PB, 9), OUTPUT);
-	gpioWrite(PORTNUM2PIN(PB, 9), LOW);
+	gpioMode(TEST_PIN, OUTPUT);
+	gpioWrite(TEST_PIN, LOW);
 
 	FTMMode[ftm] = 0;
 
@@ -209,6 +212,8 @@ void PWMFromPtr(FTM_MODULE ftm, FTM_CHANNEL channel, uint16_t** ptr) {
 */
 void ICInit(FTM_MODULE ftm, FTM_CHANNEL channel, IC_CAPTURE_EDGE edge, callbackICEdge edgeCb) {
 
+	gpioMode(TEST_PIN, OUTPUT);
+	gpioWrite(TEST_PIN, LOW);
 
 		FTMMode[ftm] = 1;
 
@@ -327,7 +332,7 @@ void ICReset(FTM_MODULE ftm, FTM_CHANNEL channel) {
  ******************************************************************************/
 
 void FTM_IRQHandler(FTM_MODULE ftm) {
-//	gpioWrite(PORTNUM2PIN(PB, 9), HIGH);
+	gpioWrite(TEST_PIN, HIGH);
 	FTM_Type* const pFTM = FTMPtrs[ftm];
 	uint8_t status = pFTM->STATUS;
 
@@ -381,7 +386,7 @@ void FTM_IRQHandler(FTM_MODULE ftm) {
 //		}
 //		pFTM->STATUS = 0x00;	// Clear all flags
 	}
-//	gpioWrite(PORTNUM2PIN(PB, 9), LOW);
+	gpioWrite(TEST_PIN, LOW);
 
 }
 
@@ -390,16 +395,20 @@ __ISR__ FTM0_IRQHandler () {
 //	FTM_IRQHandler(FTM_0);
 
 
+	gpioWrite(TEST_PIN, HIGH);
+
 	if (FTM0->SC & FTM_SC_TOF_MASK) {	// Overflow
 		FTM0->SC &= ~FTM_SC_TOF_MASK;
 		FTM0->CONTROLS[2].CnV = (uintmax_t)(**PWMPtrs[0][2])*(FTM0->MOD & FTM_MOD_MOD_MASK)/U12_MAX_VAL;
 	}
 
-
+	gpioWrite(TEST_PIN, LOW);
 
 }
 
 __ISR__ FTM1_IRQHandler () {
+
+	gpioWrite(TEST_PIN, HIGH);
 
 	uint8_t status = FTM1->STATUS;
 	if (status & FTM_STATUS_CH0F_MASK) {		// Channel Event
@@ -419,6 +428,8 @@ __ISR__ FTM1_IRQHandler () {
 //		}
 		FTM1->STATUS = 0x00;	// Clear all flags
 	}
+
+	gpioWrite(TEST_PIN, LOW);
 
 }
 

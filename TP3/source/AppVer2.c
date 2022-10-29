@@ -15,6 +15,7 @@
 #include "uart2char/uart2char.h"
 #include "char2uart/char2uart.h"
 #include "fskModulator/fskModulator.h"
+#include "MCAL/gpio.h"
 #include <stddef.h>
 #include <stdio.h>
 
@@ -28,7 +29,6 @@
 #define UART_ID 0
 #define UART_BAUDRATE	1200
 #define UART_PARITY		ODD_PARITY
-//#define UART_PARITY		NO_PARITY
 
 #define FTM_MOD FTM_1
 #define FTM_CH  0
@@ -43,6 +43,10 @@
 
 #define START_BIT 0
 #define STOP_BIT  1
+
+
+#define TEST_PIN	PORTNUM2PIN(PC, 17)
+
 /*******************************************************************************
  * ENUMERATIONS AND STRUCTURES AND TYPEDEFS
  ******************************************************************************/
@@ -97,9 +101,8 @@ void App_Init (void)
 	PWMInit(PWM_MOD, PWM_CH, DACFREQ);
 	PWMFromPtr(PWM_MOD, PWM_CH, fskPtr);
 
-//	timerInit();
-//	timer = timerGetId();
-//	timerStart(timer, TIMER_MS2TICKS(0.100), TIM_MODE_PERIODIC, NULL);
+	gpioMode(TEST_PIN, OUTPUT);
+
 
 }
 
@@ -109,23 +112,27 @@ void App_Run (void)
 	uint8_t byte;
 
 	if (uartIsRxMsg(UART_ID)) {   // Recibo por UART
+
+		gpioWrite(TEST_PIN, HIGH);
+
 		uint8_t data;
 		uartReadMsg(UART_ID, (char*)&data, 1);
-//		if(data!=0x0A){
 			Push8Bit(&uartParserRx, data);
 			if(IsNewByte(&uartParserRx)){
 				uint16_t dataaux;
 				dataaux=GetByte(&uartParserRx);
 				fskSetMsg(dataaux);
 			}
-//		}
+
+			gpioWrite(TEST_PIN, LOW);
 	}
 
 	if (byteDecoder(&byte)) {
-//  	  char msg[50];
-//  	  uint8_t cant = sprintf(msg, ": %X\r\n", byte);
-//  	  uartWriteMsg(UART_ID, msg, cant);
+		gpioWrite(TEST_PIN, HIGH);
+
 		uartWriteMsg(UART_ID, (char*)&byte, 1);
+
+		gpioWrite(TEST_PIN, LOW);
 	}
 
 }
@@ -138,7 +145,9 @@ void App_Run (void)
  ******************************************************************************/
 
 bool byteDecoder(uint8_t* byte) {
-  
+
+	gpioWrite(TEST_PIN, HIGH);
+
   static DECODER_STATE state;
 
   bool bit;
@@ -147,22 +156,19 @@ bool byteDecoder(uint8_t* byte) {
 
     case IDLE_STATE:
       if (isNewBit(&bit) && bit == START_BIT)  {    // START detected
-//    	  uartWriteMsg(UART_ID, "\r\n", 2);
     	  state = DATA_STATE;
       }
       break;
 
     case DATA_STATE:
       if (isNewBit(&bit)) {
-//    	  char msg[10];
-//    	  uint8_t cant = sprintf(msg, "%u", bit);
-//    	  uartWriteMsg(UART_ID, msg, cant);
     	  if (isNewByte(&uartParser)) {
           state = IDLE_STATE;
           if (bit == STOP_BIT) {    // STOP
             ByteStruct newByte = getByte(&uartParser);
             if (!newByte.error) {
               *byte = newByte.byte;
+          	gpioWrite(TEST_PIN, LOW);
               return true;
             }
           }
@@ -175,6 +181,7 @@ bool byteDecoder(uint8_t* byte) {
 
   }
 
+	gpioWrite(TEST_PIN, LOW);
   return false;
 
 }
@@ -182,17 +189,12 @@ bool byteDecoder(uint8_t* byte) {
 
 
 
-bool isNewBit(bool* bit){
+bool isNewBit(bool* bit) {
 
-  static uint8_t counter=0;
+	static uint8_t counter=0;
 
-  if (ICisEdge(FTM_MOD, FTM_CH)) {
-    uint16_t period = FTM_TICK2US(ICGetCont(FTM_MOD, FTM_CH));
-
-//        	  char msg[100];
-//        	  uint8_t cant = sprintf(msg, "%u\r\n", period);
-//        	  uartWriteMsg(UART_ID, msg, cant);
-
+	if (ICisEdge(FTM_MOD, FTM_CH)) {
+		uint16_t period = FTM_TICK2US(ICGetCont(FTM_MOD, FTM_CH));
 
 		if (period < UMBRAL) {    // 0
 			counter++;
@@ -203,23 +205,15 @@ bool isNewBit(bool* bit){
 			else {
 			counter = 0;
 		  }
-
-//			  uartWriteMsg(UART_ID, "0", 1);
-
 		}
 		else {        // 1
 			counter=0;
-//			  uartWriteMsg(UART_ID, "1", 1);
-			  *bit=1;
-			  return true;
-//			}
-//			else {
-//				counter = 0;
-//			}
+			*bit=1;
+			return true;
 		}
-  }
+	}
 
-  return false;
+	return false;
 
 }
 /*******************************************************************************
